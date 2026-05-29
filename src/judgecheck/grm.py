@@ -127,8 +127,8 @@ def compare_judges(
                 "n_items": res.n_items,
                 "n_participants": res.n_participants,
                 "n_responses": res.n_responses,
-                "aic": res.aic.get("final_model"),
-                "bic": res.bic.get("final_model"),
+                "aic": (res.aic or {}).get("final_model"),
+                "bic": (res.bic or {}).get("final_model"),
             }
         )
 
