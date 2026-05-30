@@ -24,6 +24,18 @@ WINNER_TO_ORDINAL: dict[str, int] = {
     "model_a": 3,  # prefers the first model (higher relative quality for A)
 }
 
+# Friendly names for MT-Bench categories (for plots and reports).
+CATEGORY_LABELS: dict[str, str] = {
+    "writing": "Writing",
+    "roleplay": "Role-play",
+    "reasoning": "Reasoning",
+    "math": "Math",
+    "coding": "Coding",
+    "extraction": "Information extraction",
+    "stem": "STEM",
+    "humanities": "Humanities",
+}
+
 
 def load_mt_bench_judgments(split: SplitName = "human") -> pd.DataFrame:
     """Load one split from lmsys/mt_bench_human_judgments on HuggingFace."""
@@ -38,6 +50,55 @@ def load_mt_bench_judgments(split: SplitName = "human") -> pd.DataFrame:
         bad = df.loc[unknown, "winner"].unique().tolist()
         raise ValueError(f"Unmapped winner values: {bad}")
     return df
+
+
+def load_mt_bench_questions() -> pd.DataFrame:
+    """Load MT-Bench question text and categories from HuggingFace."""
+    dataset = load_dataset("philschmid/mt-bench", split="train")
+    return dataset.to_pandas()
+
+
+def build_item_catalog(questions: pd.DataFrame | None = None) -> pd.DataFrame:
+    """
+    Build a lookup table: one row per benchmark item (question × turn).
+
+    Adds human-readable labels so plots and reports show real prompts,
+    not opaque IDs like ``129_t1``.
+    """
+    if questions is None:
+        questions = load_mt_bench_questions()
+
+    rows: list[dict] = []
+    for _, row in questions.iterrows():
+        category = row["category"]
+        category_label = CATEGORY_LABELS.get(category, category.title())
+        for turn_idx, prompt in enumerate(row["turns"], start=1):
+            prompt_text = str(prompt).strip()
+            short_prompt = prompt_text if len(prompt_text) <= 72 else prompt_text[:69] + "..."
+            rows.append(
+                {
+                    "item_id": f"{row['question_id']}_t{turn_idx}",
+                    "question_id": int(row["question_id"]),
+                    "turn": turn_idx,
+                    "category": category,
+                    "category_label": category_label,
+                    "prompt": prompt_text,
+                    "short_label": (
+                        f"Q{row['question_id']} [{category_label}] T{turn_idx}: "
+                        f"{short_prompt}"
+                    ),
+                }
+            )
+
+    return pd.DataFrame(rows)
+
+
+def enrich_with_labels(frame: pd.DataFrame, catalog: pd.DataFrame) -> pd.DataFrame:
+    """Join question text and category labels onto an analysis DataFrame."""
+    merged = frame.merge(catalog, on="item_id", how="left", suffixes=("", "_cat"))
+    if "question_id_cat" in merged.columns:
+        merged = merged.drop(columns=["question_id_cat", "turn_cat"], errors="ignore")
+    return merged
 
 
 def summarize_dataset(df: pd.DataFrame, name: str = "dataset") -> pd.DataFrame:
