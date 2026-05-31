@@ -41,14 +41,21 @@ pip install -r requirements.txt
 ### 2. Run the analysis
 
 ```powershell
+python scripts/run_analysis.py
+```
+
+Or the shorthand (same as full analysis):
+
+```powershell
 python scripts/fit_grm.py
 ```
 
 This will:
 
 1. Download MT-Bench judgments and question text from HuggingFace.
-2. Fit GRM models for **human experts** (with judge ability θ) and **GPT-4**.
-3. Write labeled CSVs, charts, and **`outputs/report.html`** — open in any browser.
+2. **Part A:** Fit pairwise GRM for human experts (with judge θ) and GPT-4.
+3. **Part B:** Fit 1–10 score GRM from GPT-4 single-answer ratings (34 models).
+4. Write labeled CSVs, charts, test information curve, and **`outputs/report.html`**.
 
 ### 3. Read the report (no Python needed)
 
@@ -75,6 +82,9 @@ jupyter notebook notebooks/01_explore_and_fit_grm.ipynb
 | **Category summaries** | Which MT-Bench topics (Writing, Math, …) produce sharpest questions |
 | **HTML report** | Shareable summary for advisors, collaborators, or blog readers |
 | **Human vs GPT-4** | Side-by-side reliability and discrimination correlation |
+| **1–10 score GRM** | Full polytomous model on GPT-4 single-answer ratings |
+| **Test information** | Where on the quality scale the benchmark is most informative |
+| **Unified pipeline** | `judgecheck.pipeline` — consistent base for future updates |
 
 ---
 
@@ -82,14 +92,20 @@ jupyter notebook notebooks/01_explore_and_fit_grm.ipynb
 
 ```
 JudgeCheck/
-├── docs/GETTING_STARTED.md   # Plain-language guide
+├── CHANGELOG.md              # Version history
+├── docs/
+│   ├── GETTING_STARTED.md    # Plain-language guide
+│   └── WHATS_NEW.md          # Latest features explained simply
 ├── src/judgecheck/
 │   ├── data.py               # Load judgments + question labels
-│   ├── grm.py                # GRM fitting, judge ability
+│   ├── grm.py                # GRM fitting, information functions
+│   ├── pipeline.py           # Central analysis orchestration
 │   ├── viz.py                # Charts
 │   └── report.py             # HTML report generator
-├── scripts/fit_grm.py        # One-command analysis
-├── notebooks/                # Interactive tutorial
+├── scripts/
+│   ├── run_analysis.py       # Main CLI (recommended)
+│   └── fit_grm.py            # Shortcut → full pipeline
+├── notebooks/                # Interactive tutorials
 └── outputs/                  # report.html, CSVs, PNGs (generated)
 ```
 
@@ -104,6 +120,9 @@ JudgeCheck/
 | `human_judge_abilities.csv` | Human annotators ranked by θ |
 | `human_category_summary.csv` | Mean discrimination by topic area |
 | `judge_comparison.csv` | Human vs GPT-4 reliability metrics |
+| `score_item_parameters.csv` | Discrimination from 1–10 GPT-4 scores |
+| `score_test_information.csv` | Test information T(θ) by ability level |
+| `method_discrimination_comparison.csv` | Pairwise vs score discrimination per item |
 | `*.png` | Charts (embedded in the report) |
 
 ---
@@ -113,9 +132,10 @@ JudgeCheck/
 - [x] Question labels on plots and CSVs
 - [x] Judge ability (θ) estimation
 - [x] HTML report for non-Python users
-- [ ] Absolute 1–10 score GRM when score-labeled data is available
-- [ ] Test information functions per judge system
-- [ ] Additional LLM judges (Claude, Llama, …)
+- [x] Absolute 1–10 score GRM (GPT-4 single ratings)
+- [x] Test information functions per judge system
+- [ ] Additional LLM judges (Claude pairwise, …)
+- [ ] Benchmark designer mode (information-weighted item sets)
 
 ---
 

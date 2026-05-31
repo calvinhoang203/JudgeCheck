@@ -12,7 +12,55 @@ from pathlib import Path
 
 import pandas as pd
 
-from judgecheck.grm import GRMResults, compare_judges, grm_results_to_frame, summarize_by_category
+from judgecheck.grm import GRMResults
+
+
+def _score_section(score_outputs) -> str:
+    if score_outputs is None:
+        return ""
+
+    items = score_outputs.item_params
+    mean_disc = items["discrimination"].mean()
+    peak = score_outputs.information.loc[score_outputs.information["test_information"].idxmax()]
+    method_r = None
+    if score_outputs.method_comparison is not None:
+        method_r = score_outputs.method_comparison.attrs.get("spearman_r")
+
+    method_metric = ""
+    if method_r is not None:
+        method_metric = (
+            f"<div class='metric'><span>Pairwise vs score agreement</span>"
+            f"<strong>{method_r:.2f}</strong></div>"
+        )
+
+    return f"""
+  <div class="card">
+    <h2>Part B — GPT-4 score ratings (1–10)</h2>
+    <p>
+      MT-Bench also has <strong>direct 1–10 scores</strong> from GPT-4 (single-answer grading).
+      We fit a full 10-level GRM across {score_outputs.results.n_participants} models.
+    </p>
+    <div class="metric">
+      <span>Mean discrimination (scores)</span>
+      <strong>{mean_disc:.2f}</strong>
+    </div>
+    <div class="metric">
+      <span>Peak information θ</span>
+      <strong>{peak['theta']:.1f}</strong>
+    </div>
+    {method_metric}
+    <h3>Sharpest questions (score-based)</h3>
+    <ul>
+      {_item_rows(items, 5)}
+    </ul>
+    <img src="score_top_discrimination.png" alt="Score-based discrimination">
+    <img src="score_test_information.png" alt="Test information curve">
+    {"<img src='pairwise_vs_score_discrimination.png' alt='Pairwise vs score discrimination'>" if method_r is not None else ""}
+    <p class="note">
+      Test information peaks at θ ≈ {peak['theta']:.1f} — where this benchmark best separates model quality.
+    </p>
+  </div>
+"""
 
 
 def _table_html(frame: pd.DataFrame, columns: list[str] | None = None) -> str:
@@ -44,6 +92,7 @@ def generate_html_report(
     gpt4_categories: pd.DataFrame,
     comparison: pd.DataFrame,
     output_path: str | Path,
+    score_outputs=None,
 ) -> Path:
     """Write a self-contained HTML summary with charts and plain-language captions."""
     output_path = Path(output_path)
@@ -115,7 +164,12 @@ def generate_html_report(
   </div>
 
   <div class="card">
-    <h2>Headline numbers</h2>
+    <h2>Part A — Pairwise judgments</h2>
+    <p>Human experts and GPT-4 compare two model answers (A vs B) on each question.</p>
+  </div>
+
+  <div class="card">
+    <h2>Headline numbers (pairwise)</h2>
     <div class="metric">
       <span>Human mean discrimination</span>
       <strong>{human_row['mean_discrimination']:.2f}</strong>
@@ -163,12 +217,16 @@ def generate_html_report(
     <img src="human_vs_gpt4_discrimination.png" alt="Human vs GPT-4 discrimination scatter">
   </div>
 
+  {_score_section(score_outputs)}
+
   <div class="card">
     <h2>How to read this</h2>
     <ul>
       <li><strong>Discrimination</strong> — item quality. High = good benchmark question.</li>
       <li><strong>Judge ability (θ)</strong> — judge skill/consistency. Only estimated for human annotators.</li>
-      <li><strong>Pairwise data</strong> — scores are A-vs-B preferences (1–3), not star ratings.</li>
+      <li><strong>Pairwise data</strong> — Part A uses A-vs-B preferences (1–3).</li>
+      <li><strong>Score data</strong> — Part B uses GPT-4 ratings on a 1–10 scale.</li>
+      <li><strong>Test information</strong> — shows where on the quality scale the benchmark is most informative.</li>
     </ul>
     <p class="note">
       Method: Graded Response Model (GRM) via the

@@ -16,10 +16,12 @@ JudgeCheck tells you **which benchmark questions actually help judges tell good 
 cd JudgeCheck
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python scripts/fit_grm.py
+python scripts/run_analysis.py
 ```
 
-Wait 1–3 minutes. The script downloads MT-Bench data and fits the statistical models.
+Wait a few minutes for the full analysis (pairwise + 1–10 scores). Faster: `--pairwise-only` or `--scores-only`.
+
+See [WHATS_NEW.md](WHATS_NEW.md) for what each part does.
 
 ---
 
@@ -80,6 +82,10 @@ This does **not** mean "correct" vs "incorrect" — it measures consistency on t
 | `human_category_summary.csv` | Average discrimination by topic (Writing, Math, …) |
 | `judge_comparison.csv` | Human vs GPT-4 side-by-side |
 | `*.png` | Charts embedded in the report |
+
+### Test information (Part B)
+
+The **test information curve** (`score_test_information.png`) shows where on the quality scale your benchmark works hardest. The peak θ is where the test best separates models.
 
 ---
 

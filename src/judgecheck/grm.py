@@ -37,6 +37,7 @@ class GRMResults:
     n_participants: int
     n_responses: int
     abilities: np.ndarray | None = field(default=None)
+    valid_responses: list[int] = field(default_factory=lambda: [1, 2, 3])
 
     @property
     def mean_discrimination(self) -> float:
@@ -53,8 +54,8 @@ class GRMResults:
         return self.mean_discrimination
 
 
-def _tag_matrix(matrix: np.ndarray) -> np.ndarray:
-    tagged = tag_missing_data(matrix, VALID_RESPONSES)
+def _tag_matrix(matrix: np.ndarray, valid_responses: list[int]) -> np.ndarray:
+    tagged = tag_missing_data(matrix, valid_responses)
     tagged = np.where(np.isnan(tagged), INVALID_FILL, tagged)
     return tagged.astype(int)
 
@@ -99,10 +100,92 @@ def _grm_response_prob(
     return np.clip(prob_at_least(k) - prob_at_least(k + 1), 1e-12, None)
 
 
+def _category_probs_all(
+    theta: np.ndarray,
+    discrimination: float,
+    thresholds: np.ndarray,
+    n_categories: int,
+) -> np.ndarray:
+    """Stack of category probabilities shape (n_categories, len(theta))."""
+    return np.vstack(
+        [
+            _grm_response_prob(theta, discrimination, thresholds, k)
+            for k in range(1, n_categories + 1)
+        ]
+    )
+
+
+def item_information(
+    theta: np.ndarray,
+    discrimination: float,
+    thresholds: np.ndarray,
+    n_categories: int,
+) -> np.ndarray:
+    """
+    Samejima GRM item information I(θ) at grid points.
+
+    Higher values = the item is more informative about latent ability at that θ.
+    """
+    probs = _category_probs_all(theta, discrimination, thresholds, n_categories)
+    d_theta = theta[1] - theta[0] if len(theta) > 1 else 0.1
+    d_prob = np.gradient(probs, d_theta, axis=1)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        info = np.nansum((d_prob**2) / np.clip(probs, 1e-12, None), axis=0)
+    return info
+
+
+def test_information_curve(
+    results: GRMResults,
+    *,
+    theta_min: float = -4.0,
+    theta_max: float = 4.0,
+    n_points: int = 81,
+) -> pd.DataFrame:
+    """Total test information T(θ) = sum of item information curves."""
+    theta = np.linspace(theta_min, theta_max, n_points)
+    n_categories = len(results.valid_responses)
+    total = np.zeros(n_points)
+
+    for i in range(results.n_items):
+        total += item_information(
+            theta,
+            results.discrimination[i],
+            results.difficulty[i],
+            n_categories,
+        )
+
+    return pd.DataFrame(
+        {
+            "theta": theta,
+            "test_information": total,
+            "sem": 1 / np.sqrt(np.clip(total, 1e-12, None)),
+        }
+    )
+
+
+def compare_item_discriminations(
+    frame_a: pd.DataFrame,
+    frame_b: pd.DataFrame,
+    *,
+    label_a: str = "method_a",
+    label_b: str = "method_b",
+) -> pd.DataFrame:
+    """Align two item-parameter tables and compute rank correlation."""
+    a = frame_a.set_index("item_id")[["discrimination"]].rename(columns={"discrimination": label_a})
+    b = frame_b.set_index("item_id")[["discrimination"]].rename(columns={"discrimination": label_b})
+    merged = a.join(b, how="inner").reset_index()
+    if len(merged) >= 3:
+        rho, pval = stats.spearmanr(merged[label_a], merged[label_b])
+        merged.attrs["spearman_r"] = rho
+        merged.attrs["spearman_p"] = pval
+    return merged
+
+
 def estimate_judge_abilities_eap(
     matrix: np.ndarray,
     discrimination: np.ndarray,
     difficulty: np.ndarray,
+    valid_responses: list[int],
     *,
     quadrature_n: int = 41,
     quadrature_bounds: tuple[float, float] = (-4.0, 4.0),
@@ -122,7 +205,7 @@ def estimate_judge_abilities_eap(
         log_like = np.zeros(quadrature_n)
         for i in range(n_items):
             response = matrix[i, j]
-            if np.isnan(response) or response not in VALID_RESPONSES:
+            if np.isnan(response) or int(response) not in valid_responses:
                 continue
             thresholds = difficulty[i]
             probs = _grm_response_prob(theta, discrimination[i], thresholds, int(response))
@@ -142,6 +225,7 @@ def fit_grm(
     judge_label: str = "judge",
     options: dict[str, Any] | None = None,
     estimate_abilities: bool = False,
+    valid_responses: list[int] | None = None,
 ) -> GRMResults:
     """
     Fit a Graded Response Model via marginal maximum likelihood (girth).
@@ -150,11 +234,13 @@ def fit_grm(
     ----------
     matrix : array (n_items, n_participants)
         Ordinal responses; NaN for missing judgments.
+    valid_responses : list[int], optional
+        Allowed rating levels (default ``[1, 2, 3]`` for pairwise preferences).
     estimate_abilities : bool
         If True, estimate latent judge ability (θ) via EAP after fitting items.
-        Recommended for human annotators; off for GPT-4 comparison slots.
     """
-    tagged = _tag_matrix(matrix)
+    responses = valid_responses or VALID_RESPONSES
+    tagged = _tag_matrix(matrix, responses)
     estimates = grm_mml(tagged, options=options or {})
     abilities = None
     if estimate_abilities:
@@ -162,9 +248,10 @@ def fit_grm(
             matrix,
             np.asarray(estimates["Discrimination"]),
             np.asarray(estimates["Difficulty"]),
+            responses,
         )
 
-    n_observed = int(np.sum(np.isin(tagged, VALID_RESPONSES)))
+    n_observed = int(np.sum(np.isin(tagged, responses)))
 
     return GRMResults(
         discrimination=np.asarray(estimates["Discrimination"]),
@@ -178,6 +265,7 @@ def fit_grm(
         n_participants=len(participant_ids),
         n_responses=n_observed,
         abilities=abilities,
+        valid_responses=responses,
     )
 
 

@@ -8,6 +8,8 @@ can estimate how well each benchmark question separates response quality.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Literal
 
 import numpy as np
@@ -15,6 +17,11 @@ import pandas as pd
 from datasets import load_dataset
 
 SplitName = Literal["human", "gpt4_pair"]
+
+GPT4_SINGLE_URL = (
+    "https://huggingface.co/spaces/lmsys/mt-bench/resolve/main/"
+    "data/mt_bench/model_judgment/gpt-4_single.jsonl"
+)
 
 # Map pairwise outcomes to ordinal categories (1-indexed for girth).
 WINNER_TO_ORDINAL: dict[str, int] = {
@@ -170,3 +177,75 @@ def prepare_gpt4_comparison_matrix(df: pd.DataFrame) -> tuple[np.ndarray, list[s
     item_ids = pivot.index.tolist()
     slot_ids = [f"pair_{i}" for i in pivot.columns.tolist()]
     return pivot.to_numpy(dtype=float), item_ids, slot_ids
+
+
+def load_gpt4_single_scores(
+    *,
+    cache_path: Path | str | None = None,
+    min_score: int = 1,
+    max_score: int = 10,
+) -> pd.DataFrame:
+    """
+    Load GPT-4 single-answer MT-Bench scores (1–10 per model response).
+
+    Data source: FastChat ``gpt-4_single.jsonl`` on HuggingFace.
+    Cached locally under ``data/gpt4_single.jsonl`` on first download.
+    """
+    if cache_path is None:
+        cache_path = Path("data") / "gpt4_single.jsonl"
+    else:
+        cache_path = Path(cache_path)
+
+    if not cache_path.exists():
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        import urllib.request
+
+        urllib.request.urlretrieve(GPT4_SINGLE_URL, cache_path)
+
+    rows: list[dict] = []
+    with cache_path.open(encoding="utf-8") as handle:
+        for line in handle:
+            record = json.loads(line)
+            score = record.get("score")
+            if score is None or score < min_score or score > max_score:
+                continue
+            rows.append(
+                {
+                    "question_id": int(record["question_id"]),
+                    "turn": int(record["turn"]),
+                    "model": record["model"],
+                    "score": int(score),
+                    "item_id": f"{record['question_id']}_t{record['turn']}",
+                }
+            )
+
+    return pd.DataFrame(rows)
+
+
+def prepare_score_grm_matrix(
+    df: pd.DataFrame,
+) -> tuple[np.ndarray, list[str], list[str]]:
+    """
+    Build GRM matrix from 1–10 scores: shape (n_items, n_models).
+
+    Rows = benchmark items, columns = evaluated LLMs, values = GPT-4 scores.
+    """
+    pivot = df.pivot(index="item_id", columns="model", values="score")
+    return pivot.to_numpy(dtype=float), pivot.index.tolist(), pivot.columns.tolist()
+
+
+def summarize_score_dataset(df: pd.DataFrame) -> pd.DataFrame:
+    """One-row summary for GPT-4 single-score data."""
+    return pd.DataFrame(
+        [
+            {
+                "split": "gpt4_single_scores",
+                "n_scores": len(df),
+                "n_models": df["model"].nunique(),
+                "n_items": df["item_id"].nunique(),
+                "mean_score": df["score"].mean(),
+                "score_min": df["score"].min(),
+                "score_max": df["score"].max(),
+            }
+        ]
+    )

@@ -184,3 +184,80 @@ def plot_category_discrimination(
         fig.savefig(path, dpi=150, bbox_inches="tight")
 
     return fig
+
+
+def plot_test_information(
+    information: pd.DataFrame,
+    *,
+    save_path: str | Path | None = None,
+) -> plt.Figure:
+    """
+    Plot total test information T(θ) across the ability scale.
+
+    Peaks show where the benchmark is most informative about latent quality.
+    """
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    ax.plot(information["theta"], information["test_information"], color="#2E86AB", lw=2)
+    ax.fill_between(
+        information["theta"],
+        information["test_information"],
+        alpha=0.15,
+        color="#2E86AB",
+    )
+    ax.set_xlabel("Latent quality (θ)")
+    ax.set_ylabel("Test information T(θ)")
+    ax.set_title("Where is this benchmark most informative?", fontsize=12)
+    peak_idx = information["test_information"].idxmax()
+    peak_theta = information.loc[peak_idx, "theta"]
+    ax.axvline(peak_theta, color="gray", ls="--", lw=1, alpha=0.7)
+    ax.text(
+        peak_theta,
+        information["test_information"].max() * 0.95,
+        f"  peak θ ≈ {peak_theta:.1f}",
+        fontsize=9,
+        color="gray",
+    )
+    fig.tight_layout()
+
+    if save_path:
+        path = Path(save_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(path, dpi=150, bbox_inches="tight")
+
+    return fig
+
+
+def plot_method_discrimination_comparison(
+    frame_a: pd.DataFrame,
+    frame_b: pd.DataFrame,
+    *,
+    label_a: str = "Method A",
+    label_b: str = "Method B",
+    save_path: str | Path | None = None,
+) -> plt.Figure:
+    """Compare item discrimination from two rating methods (e.g. pairwise vs 1–10)."""
+    a = frame_a.set_index("item_id")["discrimination"]
+    b = frame_b.set_index("item_id")["discrimination"]
+    merged = pd.concat([a, b], axis=1, keys=["a", "b"]).dropna().reset_index()
+    merged.columns = ["item_id", "a", "b"]
+
+    fig, ax = plt.subplots(figsize=(7, 7))
+    ax.scatter(merged["a"], merged["b"], alpha=0.55, s=42, edgecolors="white")
+    lims = [
+        min(merged["a"].min(), merged["b"].min()) * 0.9,
+        max(merged["a"].max(), merged["b"].max()) * 1.1,
+    ]
+    ax.plot(lims, lims, "k--", alpha=0.35)
+    ax.set_xlim(lims)
+    ax.set_ylim(lims)
+    ax.set_xlabel(f"{label_a} — discrimination")
+    ax.set_ylabel(f"{label_b} — discrimination")
+    ax.set_title("Do pairwise and score ratings agree on sharp questions?", fontsize=11)
+    fig.tight_layout()
+
+    if save_path:
+        path = Path(save_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(path, dpi=150, bbox_inches="tight")
+
+    return fig
