@@ -163,6 +163,52 @@ def test_information_curve(
     )
 
 
+def item_information_contributions(
+    results: GRMResults,
+    information: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Per-item share of test information at the peak θ.
+
+    Used for benchmark design: which questions carry the most diagnostic weight?
+    """
+    peak_idx = information["test_information"].idxmax()
+    peak_theta = float(information.loc[peak_idx, "theta"])
+    n_categories = len(results.valid_responses)
+
+    rows = []
+    for i, item_id in enumerate(results.item_ids):
+        # Need ≥3 θ points for np.gradient inside item_information.
+        theta_grid = np.array([peak_theta - 0.05, peak_theta, peak_theta + 0.05])
+        info_at_peak = float(
+            item_information(
+                theta_grid,
+                results.discrimination[i],
+                results.difficulty[i],
+                n_categories,
+            )[1]
+        )
+        rows.append({"item_id": item_id, "information_at_peak": info_at_peak})
+
+    frame = pd.DataFrame(rows).sort_values("information_at_peak", ascending=False)
+    total = frame["information_at_peak"].sum()
+    frame["pct_of_total"] = frame["information_at_peak"] / total * 100
+    frame["cumulative_pct"] = frame["pct_of_total"].cumsum()
+    frame["rank"] = range(1, len(frame) + 1)
+    return frame.reset_index(drop=True)
+
+
+def recommend_benchmark_items(
+    contributions: pd.DataFrame,
+    *,
+    coverage: float = 0.8,
+) -> pd.DataFrame:
+    """Return the smallest item set whose information share reaches ``coverage`` (default 80%)."""
+    crossed = contributions[contributions["cumulative_pct"] >= coverage * 100]
+    n = int(crossed.iloc[0]["rank"]) if not crossed.empty else len(contributions)
+    return contributions.head(n).copy().reset_index(drop=True)
+
+
 def compare_item_discriminations(
     frame_a: pd.DataFrame,
     frame_b: pd.DataFrame,

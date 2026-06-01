@@ -26,11 +26,14 @@ from judgecheck.grm import (
     compare_item_discriminations,
     fit_grm,
     grm_results_to_frame,
+    item_information_contributions,
     judge_abilities_to_frame,
+    recommend_benchmark_items,
     summarize_by_category,
     test_information_curve,
 )
 from judgecheck.report import generate_html_report
+from judgecheck.summary import model_score_ranking, print_console_summary, write_text_summary
 from judgecheck.viz import (
     plot_category_discrimination,
     plot_discrimination_comparison,
@@ -60,6 +63,10 @@ class ScoreOutputs:
     categories: pd.DataFrame
     information: pd.DataFrame
     method_comparison: pd.DataFrame | None
+    item_contributions: pd.DataFrame | None = None
+    recommended_items: pd.DataFrame | None = None
+    model_ranking: pd.DataFrame | None = None
+    score_df: pd.DataFrame | None = None
 
 
 def run_pairwise_analysis(
@@ -172,10 +179,17 @@ def run_score_analysis(
     item_params = enrich_with_labels(grm_results_to_frame(results), catalog)
     categories = summarize_by_category(item_params)
     information = test_information_curve(results)
+    contributions = item_information_contributions(results, information)
+    recommended = recommend_benchmark_items(contributions, coverage=0.8)
+    recommended = enrich_with_labels(recommended, catalog)
+    ranking = model_score_ranking(score_df)
 
     item_params.to_csv(output_dir / "score_item_parameters.csv", index=False)
     categories.to_csv(output_dir / "score_category_summary.csv", index=False)
     information.to_csv(output_dir / "score_test_information.csv", index=False)
+    contributions.to_csv(output_dir / "score_item_information.csv", index=False)
+    recommended.to_csv(output_dir / "recommended_benchmark_items.csv", index=False)
+    ranking.to_csv(output_dir / "model_score_ranking.csv", index=False)
 
     plot_item_discrimination(
         results,
@@ -217,6 +231,48 @@ def run_score_analysis(
         categories=categories,
         information=information,
         method_comparison=method_comparison,
+        item_contributions=contributions,
+        recommended_items=recommended,
+        model_ranking=ranking,
+        score_df=score_df,
+    )
+
+
+def _finalize_outputs(
+    output_dir: Path,
+    pairwise: PairwiseOutputs | None,
+    scores: ScoreOutputs | None,
+) -> None:
+    """Write cross-cutting summaries (text file + console)."""
+    human_top = None
+    comparison = None
+    if pairwise is not None:
+        comparison = pairwise.comparison
+        if not pairwise.human_params.empty:
+            row = pairwise.human_params.iloc[0]
+            human_top = row.get("short_label", row["item_id"])
+
+    peak_theta = None
+    recommended = None
+    ranking = None
+    if scores is not None:
+        peak_idx = scores.information["test_information"].idxmax()
+        peak_theta = float(scores.information.loc[peak_idx, "theta"])
+        recommended = scores.recommended_items
+        ranking = scores.model_ranking
+
+    write_text_summary(
+        output_dir,
+        pairwise_comparison=comparison,
+        human_top_item=human_top,
+        recommended_items=recommended,
+        model_ranking=ranking,
+        peak_theta=peak_theta,
+    )
+    print_console_summary(
+        pairwise_comparison=comparison,
+        recommended_items=recommended,
+        model_ranking=ranking,
     )
 
 
@@ -242,5 +298,7 @@ def run_full_analysis(output_dir: Path) -> tuple[PairwiseOutputs, ScoreOutputs]:
         score_outputs=scores,
         output_path=output_dir / "report.html",
     )
+
+    _finalize_outputs(output_dir, pairwise, scores)
 
     return pairwise, scores

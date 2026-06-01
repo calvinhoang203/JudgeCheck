@@ -4,6 +4,22 @@ Quick, plain-language release notes. For technical details see [CHANGELOG.md](..
 
 ---
 
+## v0.3.1 — Benchmark designer & plain-text summary
+
+**No new commands** — just run as usual:
+```powershell
+python scripts/run_analysis.py
+```
+
+### What's new?
+
+1. **`outputs/SUMMARY.txt`** — open in Notepad for headline results in plain English.
+2. **`recommended_benchmark_items.csv`** — which ~N questions carry 80% of the benchmark's diagnostic power (benchmark designer lite).
+3. **`model_score_ranking.csv`** — simple leaderboard of models by mean GPT-4 score.
+4. **Quick findings in the terminal** — three bullets at the end of each run.
+
+---
+
 ## v0.3 — Score ratings & test information
 
 **Run everything:**

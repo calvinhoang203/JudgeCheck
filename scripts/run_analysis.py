@@ -22,6 +22,7 @@ import matplotlib
 matplotlib.use("Agg")
 
 from judgecheck.pipeline import (  # noqa: E402
+    _finalize_outputs,
     run_full_analysis,
     run_pairwise_analysis,
     run_score_analysis,
@@ -50,22 +51,25 @@ def main() -> None:
     args = parser.parse_args()
 
     print("=" * 60)
-    print("JudgeCheck v0.3 — MT-Bench IRT analysis")
+    print("JudgeCheck v0.3.1 — MT-Bench IRT analysis")
     print("=" * 60)
 
     if args.pairwise_only:
         print("\nMode: pairwise only")
-        run_pairwise_analysis(args.output)
+        pairwise = run_pairwise_analysis(args.output)
+        _finalize_outputs(args.output, pairwise, None)
     elif args.scores_only:
         print("\nMode: score ratings only")
-        run_score_analysis(args.output)
+        scores = run_score_analysis(args.output)
+        _finalize_outputs(args.output, None, scores)
     else:
         print("\nMode: full (pairwise + score ratings)")
         run_full_analysis(args.output)
 
     print(f"\nDone. Outputs: {args.output.resolve()}")
+    print(f"  Summary: {(args.output / 'SUMMARY.txt').resolve()}")
     if not args.scores_only:
-        print(f"  Report: {(args.output / 'report.html').resolve()}")
+        print(f"  Report:  {(args.output / 'report.html').resolve()}")
 
 
 if __name__ == "__main__":

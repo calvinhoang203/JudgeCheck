@@ -25,12 +25,13 @@ See [WHATS_NEW.md](WHATS_NEW.md) for what each part does.
 
 ---
 
-## Step 2: Open the report (easiest path)
+## Step 2: Read the summary (fastest path)
 
-Open this file in Chrome, Firefox, or Edge:
+Open either:
 
 ```
-outputs/report.html
+outputs/SUMMARY.txt     ← plain text, works everywhere
+outputs/report.html     ← visual report with charts
 ```
 
 Double-click it, or drag it into a browser window. You will see:

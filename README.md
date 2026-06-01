@@ -123,6 +123,9 @@ JudgeCheck/
 | `score_item_parameters.csv` | Discrimination from 1–10 GPT-4 scores |
 | `score_test_information.csv` | Test information T(θ) by ability level |
 | `method_discrimination_comparison.csv` | Pairwise vs score discrimination per item |
+| `SUMMARY.txt` | **Plain-text headline results** (open in Notepad) |
+| `recommended_benchmark_items.csv` | Smallest high-value question set (~80% information) |
+| `model_score_ranking.csv` | Models ranked by mean GPT-4 score |
 | `*.png` | Charts (embedded in the report) |
 
 ---
@@ -134,8 +137,8 @@ JudgeCheck/
 - [x] HTML report for non-Python users
 - [x] Absolute 1–10 score GRM (GPT-4 single ratings)
 - [x] Test information functions per judge system
+- [x] Benchmark designer mode (lite — 80% information coverage)
 - [ ] Additional LLM judges (Claude pairwise, …)
-- [ ] Benchmark designer mode (information-weighted item sets)
 
 ---
 

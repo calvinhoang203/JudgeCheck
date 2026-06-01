@@ -1,6 +1,6 @@
 """JudgeCheck: IRT-based diagnostics for LLM-as-judge reliability."""
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 from judgecheck.data import (
     CATEGORY_LABELS,

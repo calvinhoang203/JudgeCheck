@@ -33,6 +33,21 @@ def _score_section(score_outputs) -> str:
             f"<strong>{method_r:.2f}</strong></div>"
         )
 
+    benchmark_block = ""
+    if score_outputs.recommended_items is not None and not score_outputs.recommended_items.empty:
+        rec = score_outputs.recommended_items
+        n_rec = len(rec)
+        cov = rec["cumulative_pct"].iloc[-1]
+        rec_lines = "".join(
+            f"<li>{escape(str(r.get('short_label', r['item_id'])))}</li>"
+            for _, r in rec.head(5).iterrows()
+        )
+        benchmark_block = f"""
+    <h3>Benchmark designer — keep these {n_rec} questions (~{cov:.0f}% of information)</h3>
+    <ul>{rec_lines}</ul>
+    <p class="note">Full list: recommended_benchmark_items.csv</p>
+"""
+
     return f"""
   <div class="card">
     <h2>Part B — GPT-4 score ratings (1–10)</h2>
@@ -49,6 +64,7 @@ def _score_section(score_outputs) -> str:
       <strong>{peak['theta']:.1f}</strong>
     </div>
     {method_metric}
+    {benchmark_block}
     <h3>Sharpest questions (score-based)</h3>
     <ul>
       {_item_rows(items, 5)}

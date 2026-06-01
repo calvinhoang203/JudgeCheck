@@ -3,6 +3,14 @@
 All notable JudgeCheck updates are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.1] — 2026-05-30
+
+### Added
+- **Benchmark designer (lite)** — `recommended_benchmark_items.csv` lists the smallest question set covering ~80% of diagnostic information
+- **`SUMMARY.txt`** — plain-text headline findings (no browser or Python needed)
+- **`model_score_ranking.csv`** — models ranked by mean GPT-4 score
+- **Console quick findings** — three bullet points printed after each run
+
 ## [0.3.0] — 2026-05-30
 
 ### Added
