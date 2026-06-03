@@ -109,6 +109,7 @@ def generate_html_report(
     comparison: pd.DataFrame,
     output_path: str | Path,
     score_outputs=None,
+    winner_agreement_rate: float | None = None,
 ) -> Path:
     """Write a self-contained HTML summary with charts and plain-language captions."""
     output_path = Path(output_path)
@@ -195,6 +196,7 @@ def generate_html_report(
       <strong>{gpt4_row['mean_discrimination']:.2f}</strong>
     </div>
     {"<div class='metric'><span>Human vs GPT-4 agreement (Spearman)</span><strong>" + f"{spearman:.2f}" + "</strong></div>" if spearman is not None else ""}
+    {"<div class='metric'><span>Same-comparison winner agreement</span><strong>" + f"{winner_agreement_rate * 100:.1f}%" + "</strong></div>" if winner_agreement_rate is not None else ""}
     <p class="note">
       Higher discrimination = sharper benchmark questions for that judge system.
       Human experts: {int(human_row['n_participants'])} annotators.

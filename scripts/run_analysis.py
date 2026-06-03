@@ -3,7 +3,8 @@
 JudgeCheck main entry point.
 
 Usage (from repo root, venv activated):
-    python scripts/run_analysis.py              # full analysis (default)
+    python scripts/run_analysis.py                    # full analysis (default)
+    python scripts/run_analysis.py --coverage 0.9   # stricter benchmark subset
     python scripts/run_analysis.py --pairwise-only
     python scripts/run_analysis.py --scores-only
 """
@@ -21,6 +22,8 @@ import matplotlib
 
 matplotlib.use("Agg")
 
+from judgecheck import __version__  # noqa: E402
+from judgecheck.config import AnalysisConfig  # noqa: E402
 from judgecheck.pipeline import (  # noqa: E402
     _finalize_outputs,
     run_full_analysis,
@@ -37,6 +40,12 @@ def main() -> None:
         default=ROOT / "outputs",
         help="Output directory (default: outputs/)",
     )
+    parser.add_argument(
+        "--coverage",
+        type=float,
+        default=0.8,
+        help="Target information coverage for recommended items (default: 0.8)",
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "--pairwise-only",
@@ -50,21 +59,23 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    config = AnalysisConfig(coverage=args.coverage)
+
     print("=" * 60)
-    print("JudgeCheck v0.3.1 — MT-Bench IRT analysis")
+    print(f"JudgeCheck v{__version__} — MT-Bench IRT analysis")
     print("=" * 60)
 
     if args.pairwise_only:
         print("\nMode: pairwise only")
-        pairwise = run_pairwise_analysis(args.output)
-        _finalize_outputs(args.output, pairwise, None)
+        pairwise = run_pairwise_analysis(args.output, config=config)
+        _finalize_outputs(args.output, pairwise, None, config=config)
     elif args.scores_only:
         print("\nMode: score ratings only")
-        scores = run_score_analysis(args.output)
-        _finalize_outputs(args.output, None, scores)
+        scores = run_score_analysis(args.output, config=config)
+        _finalize_outputs(args.output, None, scores, config=config)
     else:
         print("\nMode: full (pairwise + score ratings)")
-        run_full_analysis(args.output)
+        run_full_analysis(args.output, config=config)
 
     print(f"\nDone. Outputs: {args.output.resolve()}")
     print(f"  Summary: {(args.output / 'SUMMARY.txt').resolve()}")

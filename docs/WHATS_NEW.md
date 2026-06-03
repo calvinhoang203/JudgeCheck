@@ -4,6 +4,29 @@ Quick, plain-language release notes. For technical details see [CHANGELOG.md](..
 
 ---
 
+## v0.3.2 — Weak items & judge agreement
+
+```powershell
+python scripts/run_analysis.py --coverage 0.9   # keep fewer, higher-value questions
+```
+
+### What's new?
+
+1. **Weak question lists** — items that barely separate model quality (candidates to fix or remove).
+2. **Human vs GPT-4 agreement** — when they judged the *same* A vs B pairs, how often did they pick the same winner? (~61% overall).
+3. **`--coverage` knob** — e.g. `0.9` recommends a smaller, higher-information question subset.
+
+### New files
+
+| File | Meaning |
+|------|---------|
+| `weak_benchmark_items.csv` | Weakest items (human pairwise) |
+| `weak_score_items.csv` | Weakest items (1–10 scores) |
+| `pairwise_winner_agreement.csv` | Overall human vs GPT-4 agreement |
+| `pairwise_agreement_by_item.csv` | Agreement per question |
+
+---
+
 ## v0.3.1 — Benchmark designer & plain-text summary
 
 **No new commands** — just run as usual:

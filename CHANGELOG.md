@@ -3,6 +3,14 @@
 All notable JudgeCheck updates are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.2] — 2026-05-30
+
+### Added
+- **`--coverage` flag** — tune how much information the recommended question set must cover (default 80%)
+- **`weak_benchmark_items.csv` / `weak_score_items.csv`** — lowest-discrimination questions to revise or drop
+- **Pairwise winner agreement** — human majority vs GPT-4 on the same A/B comparisons (`pairwise_winner_agreement.csv`)
+- **`AnalysisConfig`** — shared settings object for consistent pipeline updates
+
 ## [0.3.1] — 2026-05-30
 
 ### Added

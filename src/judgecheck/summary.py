@@ -26,9 +26,12 @@ def write_text_summary(
     *,
     pairwise_comparison: pd.DataFrame | None = None,
     human_top_item: str | None = None,
+    human_weak_item: str | None = None,
+    winner_agreement_rate: float | None = None,
     recommended_items: pd.DataFrame | None = None,
     model_ranking: pd.DataFrame | None = None,
     peak_theta: float | None = None,
+    coverage_target: float = 0.8,
 ) -> Path:
     """Write ``SUMMARY.txt`` — quick read without opening HTML or CSVs."""
     lines = [
@@ -61,6 +64,14 @@ def write_text_summary(
             lines.append(f"  Human vs GPT-4 agreement: {rho:.2f} (Spearman)")
         if human_top_item:
             lines.append(f"  Sharpest human item: {human_top_item}")
+        if human_weak_item:
+            lines.append(f"  Weakest human item: {human_weak_item}")
+            lines.append("  See weak_benchmark_items.csv for more low-value questions.")
+        if winner_agreement_rate is not None:
+            lines.append(
+                f"  Human vs GPT-4 winner agreement: {winner_agreement_rate * 100:.1f}%"
+            )
+            lines.append("  See pairwise_winner_agreement.csv for details.")
         lines.append("")
 
     if recommended_items is not None and not recommended_items.empty:
@@ -69,7 +80,8 @@ def write_text_summary(
         lines.extend(
             [
                 "BENCHMARK DESIGNER (Part B)",
-                f"  {n} questions cover ~{cov:.0f}% of diagnostic information.",
+                f"  {n} questions cover ~{cov:.0f}% of diagnostic information "
+                f"(target {coverage_target * 100:.0f}%).",
                 "  See recommended_benchmark_items.csv for the list.",
             ]
         )
@@ -93,6 +105,10 @@ def write_text_summary(
     lines.extend(
         [
             "FILES TO OPEN",
+            "  recommended_benchmark_items.csv — high-value question set",
+            "  weak_benchmark_items.csv — low discrimination (pairwise)",
+            "  weak_score_items.csv     — low discrimination (1–10 scores)",
+            "  pairwise_winner_agreement.csv — human vs GPT-4 picks",
             "  report.html          — visual report (best for sharing)",
             "  SUMMARY.txt          — this file",
             "  docs/GETTING_STARTED.md — how to read the numbers",
@@ -110,18 +126,25 @@ def print_console_summary(
     pairwise_comparison: pd.DataFrame | None = None,
     recommended_items: pd.DataFrame | None = None,
     model_ranking: pd.DataFrame | None = None,
+    winner_agreement_rate: float | None = None,
+    coverage_target: float = 0.8,
 ) -> None:
-    """Print three headline findings after a pipeline run."""
+    """Print headline findings after a pipeline run."""
     print("\n--- Quick findings ---")
     if pairwise_comparison is not None:
         human = pairwise_comparison.loc[
             pairwise_comparison["judge_system"] == "human_experts"
         ].iloc[0]
         print(f"  Human discrimination (mean): {human['mean_discrimination']:.2f}")
+    if winner_agreement_rate is not None:
+        print(f"  Human vs GPT-4 winner agreement: {winner_agreement_rate * 100:.1f}%")
     if recommended_items is not None and not recommended_items.empty:
         n = len(recommended_items)
         cov = recommended_items["cumulative_pct"].iloc[-1]
-        print(f"  {n} items cover ~{cov:.0f}% of benchmark information")
+        print(
+            f"  {n} items cover ~{cov:.0f}% of information "
+            f"(target {coverage_target * 100:.0f}%)"
+        )
     if model_ranking is not None and not model_ranking.empty:
         top = model_ranking.iloc[0]
         print(f"  Top model by GPT-4 score: {top['model']} ({top['mean_score']:.2f})")

@@ -125,6 +125,9 @@ JudgeCheck/
 | `method_discrimination_comparison.csv` | Pairwise vs score discrimination per item |
 | `SUMMARY.txt` | **Plain-text headline results** (open in Notepad) |
 | `recommended_benchmark_items.csv` | Smallest high-value question set (~80% information) |
+| `weak_benchmark_items.csv` | Weakest items (pairwise) — consider revising |
+| `weak_score_items.csv` | Weakest items (1–10 score GRM) |
+| `pairwise_winner_agreement.csv` | Human vs GPT-4 winner agreement rate |
 | `model_score_ranking.csv` | Models ranked by mean GPT-4 score |
 | `*.png` | Charts (embedded in the report) |
 
@@ -138,6 +141,7 @@ JudgeCheck/
 - [x] Absolute 1–10 score GRM (GPT-4 single ratings)
 - [x] Test information functions per judge system
 - [x] Benchmark designer mode (lite — 80% information coverage)
+- [x] Weak-item exports and human vs GPT-4 winner agreement
 - [ ] Additional LLM judges (Claude pairwise, …)
 
 ---

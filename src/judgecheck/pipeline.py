@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from judgecheck.config import AnalysisConfig
 from judgecheck.data import (
     build_item_catalog,
     enrich_with_labels,
@@ -32,6 +33,7 @@ from judgecheck.grm import (
     summarize_by_category,
     test_information_curve,
 )
+from judgecheck.insights import pairwise_winner_agreement, select_weak_items
 from judgecheck.report import generate_html_report
 from judgecheck.summary import model_score_ranking, print_console_summary, write_text_summary
 from judgecheck.viz import (
@@ -54,6 +56,9 @@ class PairwiseOutputs:
     comparison: pd.DataFrame
     human_categories: pd.DataFrame
     gpt4_categories: pd.DataFrame
+    weak_human_items: pd.DataFrame | None = None
+    winner_agreement: pd.DataFrame | None = None
+    winner_agreement_by_item: pd.DataFrame | None = None
 
 
 @dataclass
@@ -72,8 +77,10 @@ class ScoreOutputs:
 def run_pairwise_analysis(
     output_dir: Path,
     catalog: pd.DataFrame | None = None,
+    config: AnalysisConfig | None = None,
 ) -> PairwiseOutputs:
     """Pairwise A/B human + GPT-4 GRM (3-level ordinal)."""
+    config = config or AnalysisConfig()
     output_dir.mkdir(parents=True, exist_ok=True)
     if catalog is None:
         catalog = build_item_catalog()
@@ -104,6 +111,11 @@ def run_pairwise_analysis(
     comparison = compare_judges(human_results, gpt4_results)
     human_categories = summarize_by_category(human_params)
     gpt4_categories = summarize_by_category(gpt4_params)
+    weak_human = enrich_with_labels(
+        select_weak_items(human_params, n=config.weak_item_count), catalog
+    )
+    agree_overall, agree_by_item = pairwise_winner_agreement(human_df, gpt4_df)
+    agree_by_item = enrich_with_labels(agree_by_item, catalog)
 
     human_params.to_csv(output_dir / "human_item_parameters.csv", index=False)
     gpt4_params.to_csv(output_dir / "gpt4_item_parameters.csv", index=False)
@@ -111,6 +123,9 @@ def run_pairwise_analysis(
     comparison.to_csv(output_dir / "judge_comparison.csv", index=False)
     human_categories.to_csv(output_dir / "human_category_summary.csv", index=False)
     gpt4_categories.to_csv(output_dir / "gpt4_category_summary.csv", index=False)
+    weak_human.to_csv(output_dir / "weak_benchmark_items.csv", index=False)
+    agree_overall.to_csv(output_dir / "pairwise_winner_agreement.csv", index=False)
+    agree_by_item.to_csv(output_dir / "pairwise_agreement_by_item.csv", index=False)
 
     plot_item_discrimination(
         human_results,
@@ -140,6 +155,25 @@ def run_pairwise_analysis(
         save_path=output_dir / "human_category_discrimination.png",
     )
 
+    generate_html_report(
+        human_results=human_results,
+        gpt4_results=gpt4_results,
+        human_items=human_params,
+        gpt4_items=gpt4_params,
+        human_judges=judge_params,
+        human_categories=human_categories,
+        gpt4_categories=gpt4_categories,
+        comparison=comparison,
+        score_outputs=None,
+        winner_agreement_rate=(
+            float(pairwise.winner_agreement["agreement_rate"].iloc[0])
+            if pairwise.winner_agreement is not None
+            and not pairwise.winner_agreement.empty
+            else None
+        ),
+        output_path=output_dir / "report.html",
+    )
+
     return PairwiseOutputs(
         human_results=human_results,
         gpt4_results=gpt4_results,
@@ -149,6 +183,9 @@ def run_pairwise_analysis(
         comparison=comparison,
         human_categories=human_categories,
         gpt4_categories=gpt4_categories,
+        weak_human_items=weak_human,
+        winner_agreement=agree_overall,
+        winner_agreement_by_item=agree_by_item,
     )
 
 
@@ -156,8 +193,10 @@ def run_score_analysis(
     output_dir: Path,
     catalog: pd.DataFrame | None = None,
     pairwise_human_params: pd.DataFrame | None = None,
+    config: AnalysisConfig | None = None,
 ) -> ScoreOutputs:
     """GRM on GPT-4 single-answer scores (1–10) across 34 models."""
+    config = config or AnalysisConfig()
     output_dir.mkdir(parents=True, exist_ok=True)
     if catalog is None:
         catalog = build_item_catalog()
@@ -180,8 +219,11 @@ def run_score_analysis(
     categories = summarize_by_category(item_params)
     information = test_information_curve(results)
     contributions = item_information_contributions(results, information)
-    recommended = recommend_benchmark_items(contributions, coverage=0.8)
+    recommended = recommend_benchmark_items(contributions, coverage=config.coverage)
     recommended = enrich_with_labels(recommended, catalog)
+    weak_score = enrich_with_labels(
+        select_weak_items(item_params, n=config.weak_item_count), catalog
+    )
     ranking = model_score_ranking(score_df)
 
     item_params.to_csv(output_dir / "score_item_parameters.csv", index=False)
@@ -189,6 +231,7 @@ def run_score_analysis(
     information.to_csv(output_dir / "score_test_information.csv", index=False)
     contributions.to_csv(output_dir / "score_item_information.csv", index=False)
     recommended.to_csv(output_dir / "recommended_benchmark_items.csv", index=False)
+    weak_score.to_csv(output_dir / "weak_score_items.csv", index=False)
     ranking.to_csv(output_dir / "model_score_ranking.csv", index=False)
 
     plot_item_discrimination(
@@ -242,15 +285,24 @@ def _finalize_outputs(
     output_dir: Path,
     pairwise: PairwiseOutputs | None,
     scores: ScoreOutputs | None,
+    config: AnalysisConfig | None = None,
 ) -> None:
     """Write cross-cutting summaries (text file + console)."""
+    config = config or AnalysisConfig()
     human_top = None
+    human_weak = None
+    agree_rate = None
     comparison = None
     if pairwise is not None:
         comparison = pairwise.comparison
         if not pairwise.human_params.empty:
             row = pairwise.human_params.iloc[0]
             human_top = row.get("short_label", row["item_id"])
+        if pairwise.weak_human_items is not None and not pairwise.weak_human_items.empty:
+            w = pairwise.weak_human_items.iloc[0]
+            human_weak = w.get("short_label", w["item_id"])
+        if pairwise.winner_agreement is not None and not pairwise.winner_agreement.empty:
+            agree_rate = float(pairwise.winner_agreement["agreement_rate"].iloc[0])
 
     peak_theta = None
     recommended = None
@@ -265,25 +317,35 @@ def _finalize_outputs(
         output_dir,
         pairwise_comparison=comparison,
         human_top_item=human_top,
+        human_weak_item=human_weak,
+        winner_agreement_rate=agree_rate,
         recommended_items=recommended,
         model_ranking=ranking,
         peak_theta=peak_theta,
+        coverage_target=config.coverage,
     )
     print_console_summary(
         pairwise_comparison=comparison,
         recommended_items=recommended,
         model_ranking=ranking,
+        winner_agreement_rate=agree_rate,
+        coverage_target=config.coverage,
     )
 
 
-def run_full_analysis(output_dir: Path) -> tuple[PairwiseOutputs, ScoreOutputs]:
+def run_full_analysis(
+    output_dir: Path,
+    config: AnalysisConfig | None = None,
+) -> tuple[PairwiseOutputs, ScoreOutputs]:
     """Run both analysis tracks and write the combined HTML report."""
+    config = config or AnalysisConfig()
     catalog = build_item_catalog()
-    pairwise = run_pairwise_analysis(output_dir, catalog=catalog)
+    pairwise = run_pairwise_analysis(output_dir, catalog=catalog, config=config)
     scores = run_score_analysis(
         output_dir,
         catalog=catalog,
         pairwise_human_params=pairwise.human_params,
+        config=config,
     )
 
     generate_html_report(
@@ -296,9 +358,15 @@ def run_full_analysis(output_dir: Path) -> tuple[PairwiseOutputs, ScoreOutputs]:
         gpt4_categories=pairwise.gpt4_categories,
         comparison=pairwise.comparison,
         score_outputs=scores,
+        winner_agreement_rate=(
+            float(pairwise.winner_agreement["agreement_rate"].iloc[0])
+            if pairwise.winner_agreement is not None
+            and not pairwise.winner_agreement.empty
+            else None
+        ),
         output_path=output_dir / "report.html",
     )
 
-    _finalize_outputs(output_dir, pairwise, scores)
+    _finalize_outputs(output_dir, pairwise, scores, config=config)
 
     return pairwise, scores
