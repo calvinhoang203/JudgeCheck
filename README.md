@@ -1,35 +1,12 @@
 # JudgeCheck
 
-**Diagnostic IRT tooling for LLM-as-judge systems** — built for researchers who want rigorous psychometrics, explained clearly enough for anyone evaluating benchmark pipelines.
+IRT diagnostics for LLM-as-judge evaluation on MT-Bench. Estimates **item discrimination** (which benchmark questions separate good vs bad responses) using a **Graded Response Model (GRM)** via [`girth`](https://github.com/eribean/girth).
 
-> *Is your LLM judge actually measuring what you think it is? JudgeCheck uses Item Response Theory (IRT) to find out.*
+**Continuing development:** see [AGENTS.md](AGENTS.md).  
+**Reading results:** see [docs/GUIDE.md](docs/GUIDE.md).  
+**Version history:** [CHANGELOG.md](CHANGELOG.md).
 
-**New here?** Read **[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)** — no statistics background required.
-
----
-
-## What problem does this solve?
-
-When we use one LLM to score another (LLM-as-judge), we usually report aggregate accuracy or agreement with humans. That tells us **how much** the judge agrees, but not **where** it fails or **which benchmark questions** are doing real work.
-
-**JudgeCheck** reframes evaluation through [Item Response Theory](https://en.wikipedia.org/wiki/Item_response_theory):
-
-| Classic IRT (education) | JudgeCheck (LLM evaluation) |
-|------------------------|----------------------------|
-| Test questions (items) | MT-Bench benchmark prompts |
-| Student ability (θ)    | Judge skill / consistency  |
-| Response (correct/incorrect or Likert) | Pairwise preference → ordinal score |
-
-The **Graded Response Model (GRM)** extends IRT to multi-level ratings (here, 3-level pairwise preferences). Its key output is **item discrimination (a)**: how strongly each benchmark question separates high- vs low-quality responses *as seen by the judge*.
-
-- **High discrimination** → the question is a sharp probe; judges consistently rank responses differently on it.
-- **Low discrimination** → the question is a weak probe; most responses look similar to the judge.
-
----
-
-## Quick start
-
-### 1. Environment
+## Setup
 
 ```powershell
 cd JudgeCheck
@@ -38,129 +15,56 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### 2. Run the analysis
+## Run
 
 ```powershell
 python scripts/run_analysis.py
 ```
 
-Or the shorthand (same as full analysis):
+Options: `--pairwise-only`, `--scores-only`, `--coverage 0.9` (default 0.8).
 
-```powershell
-python scripts/fit_grm.py
-```
+Outputs: `outputs/SUMMARY.txt`, `outputs/report.html`, CSVs and PNGs.
 
-This will:
+## Two analysis tracks
 
-1. Download MT-Bench judgments and question text from HuggingFace.
-2. **Part A:** Fit pairwise GRM for human experts (with judge θ) and GPT-4.
-3. **Part B:** Fit 1–10 score GRM from GPT-4 single-answer ratings (34 models).
-4. Write labeled CSVs, charts, test information curve, and **`outputs/report.html`**.
-
-### 3. Read the report (no Python needed)
-
-```
-outputs/report.html
-```
-
-Plain-language summary with real question text, sharpest/weakest items, and human vs GPT-4 comparison.
-
-### 4. Interactive notebook
-
-```powershell
-jupyter notebook notebooks/01_explore_and_fit_grm.ipynb
-```
-
----
-
-## What's included now
-
-| Feature | Description |
-|---------|-------------|
-| **Labeled questions** | Plots show real prompts, not opaque IDs like `129_t1` |
-| **Judge ability (θ)** | Rank human annotators by consistency |
-| **Category summaries** | Which MT-Bench topics (Writing, Math, …) produce sharpest questions |
-| **HTML report** | Shareable summary for advisors, collaborators, or blog readers |
-| **Human vs GPT-4** | Side-by-side reliability and discrimination correlation |
-| **1–10 score GRM** | Full polytomous model on GPT-4 single-answer ratings |
-| **Test information** | Where on the quality scale the benchmark is most informative |
-| **Unified pipeline** | `judgecheck.pipeline` — consistent base for future updates |
-
----
+| Track | Data | Response scale |
+|-------|------|----------------|
+| **Pairwise** | Human experts + GPT-4 A/B judgments | 1–3 (B / tie / A) |
+| **Scores** | GPT-4 single-answer ratings, 34 models | 1–10 |
 
 ## Project layout
 
 ```
-JudgeCheck/
-├── CHANGELOG.md              # Version history
-├── docs/
-│   ├── GETTING_STARTED.md    # Plain-language guide
-│   └── WHATS_NEW.md          # Latest features explained simply
-├── src/judgecheck/
-│   ├── data.py               # Load judgments + question labels
-│   ├── grm.py                # GRM fitting, information functions
-│   ├── pipeline.py           # Central analysis orchestration
-│   ├── viz.py                # Charts
-│   └── report.py             # HTML report generator
-├── scripts/
-│   ├── run_analysis.py       # Main CLI (recommended)
-│   └── fit_grm.py            # Shortcut → full pipeline
-├── notebooks/                # Interactive tutorials
-└── outputs/                  # report.html, CSVs, PNGs (generated)
+src/judgecheck/     library
+scripts/            run_analysis.py (main), fit_grm.py (alias)
+notebooks/          01 explore pairwise; 02 score GRM
+outputs/            generated (gitignored)
+data/               cached gpt4_single.jsonl (gitignored)
 ```
 
----
+## Main output files
 
-## Reading the outputs
+| File | Description |
+|------|-------------|
+| `SUMMARY.txt` | Text headline results |
+| `report.html` | HTML report with figures |
+| `human_item_parameters.csv` | Item discrimination (human pairwise) |
+| `human_judge_abilities.csv` | Annotator θ estimates |
+| `score_item_parameters.csv` | Item discrimination (1–10 scores) |
+| `recommended_benchmark_items.csv` | High-information question subset |
+| `weak_benchmark_items.csv` | Low discrimination (pairwise) |
+| `pairwise_winner_agreement.csv` | Human vs GPT-4 winner agreement |
 
-| File | Meaning |
-|------|---------|
-| `report.html` | **Start here** — visual summary for any audience |
-| `human_item_parameters.csv` | Per-question discrimination with prompt text |
-| `human_judge_abilities.csv` | Human annotators ranked by θ |
-| `human_category_summary.csv` | Mean discrimination by topic area |
-| `judge_comparison.csv` | Human vs GPT-4 reliability metrics |
-| `score_item_parameters.csv` | Discrimination from 1–10 GPT-4 scores |
-| `score_test_information.csv` | Test information T(θ) by ability level |
-| `method_discrimination_comparison.csv` | Pairwise vs score discrimination per item |
-| `SUMMARY.txt` | **Plain-text headline results** (open in Notepad) |
-| `recommended_benchmark_items.csv` | Smallest high-value question set (~80% information) |
-| `weak_benchmark_items.csv` | Weakest items (pairwise) — consider revising |
-| `weak_score_items.csv` | Weakest items (1–10 score GRM) |
-| `pairwise_winner_agreement.csv` | Human vs GPT-4 winner agreement rate |
-| `model_score_ranking.csv` | Models ranked by mean GPT-4 score |
-| `*.png` | Charts (embedded in the report) |
+## IRT mapping
 
----
+| IRT | JudgeCheck |
+|-----|------------|
+| Item | MT-Bench question + turn |
+| Person | Judge (human) or model (score track) |
+| Discrimination *a* | How sharply the item separates quality |
 
-## Roadmap
-
-- [x] Question labels on plots and CSVs
-- [x] Judge ability (θ) estimation
-- [x] HTML report for non-Python users
-- [x] Absolute 1–10 score GRM (GPT-4 single ratings)
-- [x] Test information functions per judge system
-- [x] Benchmark designer mode (lite — 80% information coverage)
-- [x] Weak-item exports and human vs GPT-4 winner agreement
-- [ ] Additional LLM judges (Claude pairwise, …)
-
----
-
-## Citation
-
-```bibtex
-@misc{zheng2023judging,
-  title={Judging LLM-as-a-judge with MT-Bench and Chatbot Arena},
-  author={Lianmin Zheng and Wei-Lin Chiang and others},
-  year={2023},
-  eprint={2306.05685},
-  archivePrefix={arXiv},
-  primaryClass={cs.CL}
-}
-```
-
----
+Pairwise MT-Bench labels are comparisons, not 1–5 stars; see [docs/GUIDE.md](docs/GUIDE.md).
 
 ## License
 
-MIT (code). MT-Bench judgment data: [CC-BY-4.0](https://huggingface.co/datasets/lmsys/mt_bench_human_judgments).
+MIT (code). MT-Bench data: [CC-BY-4.0](https://huggingface.co/datasets/lmsys/mt_bench_human_judgments).

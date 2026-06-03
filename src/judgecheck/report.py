@@ -1,8 +1,4 @@
-"""
-Generate a plain-language HTML report for non-expert audiences.
-
-Open ``outputs/report.html`` in any browser after running the analysis script.
-"""
+"""Build HTML report from pipeline outputs."""
 
 from __future__ import annotations
 
@@ -43,7 +39,7 @@ def _score_section(score_outputs) -> str:
             for _, r in rec.head(5).iterrows()
         )
         benchmark_block = f"""
-    <h3>Benchmark designer — keep these {n_rec} questions (~{cov:.0f}% of information)</h3>
+    <h3>Benchmark designer — {n_rec} items (~{cov:.0f}% information)</h3>
     <ul>{rec_lines}</ul>
     <p class="note">Full list: recommended_benchmark_items.csv</p>
 """
@@ -111,7 +107,7 @@ def generate_html_report(
     score_outputs=None,
     winner_agreement_rate: float | None = None,
 ) -> Path:
-    """Write a self-contained HTML summary with charts and plain-language captions."""
+    """Write ``outputs/report.html``."""
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -165,28 +161,15 @@ def generate_html_report(
 </head>
 <body>
   <h1>JudgeCheck Report</h1>
-  <p class="note">Generated {generated}. Open this file in any web browser — no Python required.</p>
+  <p class="note">Generated {generated}. Figures are PNGs in the same folder.</p>
 
   <div class="card">
-    <h2>What is this?</h2>
-    <p>
-      <strong>JudgeCheck</strong> checks whether LLM judges and human experts are reliable graders.
-      We analyzed <strong>MT-Bench</strong> — a standard benchmark where judges pick the better of two AI answers.
-    </p>
-    <p>
-      Each benchmark question gets a <strong>discrimination</strong> score:
-      how sharply it separates good vs bad answers.
-      Think of it like a test question that actually tells students apart vs one everyone gets right.
-    </p>
+    <h2>Overview</h2>
+    <p>GRM item discrimination on MT-Bench. <strong>Discrimination</strong> = how sharply a question separates response quality for each judge system.</p>
   </div>
 
   <div class="card">
-    <h2>Part A — Pairwise judgments</h2>
-    <p>Human experts and GPT-4 compare two model answers (A vs B) on each question.</p>
-  </div>
-
-  <div class="card">
-    <h2>Headline numbers (pairwise)</h2>
+    <h2>Part A — Pairwise</h2>
     <div class="metric">
       <span>Human mean discrimination</span>
       <strong>{human_row['mean_discrimination']:.2f}</strong>
@@ -217,42 +200,25 @@ def generate_html_report(
     <ul>
       {_item_rows(human_items.sort_values("discrimination").reset_index(drop=True), 5)}
     </ul>
-    <p class="note">These items rarely help judges tell models apart — candidates to revise or drop from benchmarks.</p>
+    <p class="note">Low discrimination — see weak_benchmark_items.csv</p>
   </div>
 
-  {"<div class='card'><h2>Most consistent human judges</h2><p>Ability (θ) estimates how decisively and consistently each annotator rates across questions.</p>" + _table_html(human_judges.head(10), ["judge_id", "ability_theta", "ability_rank"]) + "<img src='human_judge_abilities.png' alt='Judge abilities'></div>" if human_judges is not None else ""}
+  {"<div class='card'><h2>Human judge ability (θ)</h2>" + _table_html(human_judges.head(10), ["judge_id", "ability_theta", "ability_rank"]) + "<img src='human_judge_abilities.png' alt='Judge abilities'></div>" if human_judges is not None else ""}
 
   <div class="card">
-    <h2>By topic category</h2>
-    <p>Which MT-Bench areas produce the most informative questions?</p>
+    <h2>By category</h2>
     {_table_html(human_categories, ["category_label", "n_items", "mean_discrimination"])}
     <img src="human_category_discrimination.png" alt="Category discrimination">
   </div>
 
   <div class="card">
-    <h2>Human vs GPT-4</h2>
-    <p>Do automated and human judges agree on which questions are sharpest?</p>
+    <h2>Discrimination scatter (human vs GPT-4)</h2>
     <img src="human_vs_gpt4_discrimination.png" alt="Human vs GPT-4 discrimination scatter">
   </div>
 
   {_score_section(score_outputs)}
 
-  <div class="card">
-    <h2>How to read this</h2>
-    <ul>
-      <li><strong>Discrimination</strong> — item quality. High = good benchmark question.</li>
-      <li><strong>Judge ability (θ)</strong> — judge skill/consistency. Only estimated for human annotators.</li>
-      <li><strong>Pairwise data</strong> — Part A uses A-vs-B preferences (1–3).</li>
-      <li><strong>Score data</strong> — Part B uses GPT-4 ratings on a 1–10 scale.</li>
-      <li><strong>Test information</strong> — shows where on the quality scale the benchmark is most informative.</li>
-    </ul>
-    <p class="note">
-      Method: Graded Response Model (GRM) via the
-      <a href="https://github.com/eribean/girth">girth</a> Python package.
-      Data:
-      <a href="https://huggingface.co/datasets/lmsys/mt_bench_human_judgments">lmsys/mt_bench_human_judgments</a>.
-    </p>
-  </div>
+  <p class="note">Metric definitions: docs/GUIDE.md in the repository.</p>
 </body>
 </html>
 """

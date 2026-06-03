@@ -3,6 +3,13 @@
 All notable JudgeCheck updates are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.3] — 2026-05-30
+
+### Changed
+- Added **AGENTS.md** for continuing work in new sessions (architecture, data, conventions)
+- Replaced verbose docs with **docs/GUIDE.md**; removed redundant `GETTING_STARTED.md` and `WHATS_NEW.md`
+- Trimmed README, HTML report, and SUMMARY marketing copy
+
 ## [0.3.2] — 2026-05-30
 
 ### Added
@@ -27,7 +34,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - **Method comparison** — correlates pairwise vs score-based item discrimination
 - **`judgecheck.pipeline`** — central orchestration module for consistent future updates
 - **`scripts/run_analysis.py`** — main CLI with `--pairwise-only` / `--scores-only` flags
-- **`docs/WHATS_NEW.md`** — plain-language summary of each release
+- **`docs/WHATS_NEW.md`** — release notes (later removed; use CHANGELOG)
 
 ### Changed
 - `fit_grm.py` now delegates to the full pipeline (pairwise + scores)

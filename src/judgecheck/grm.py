@@ -45,12 +45,7 @@ class GRMResults:
 
     @property
     def reliability_proxy(self) -> float:
-        """
-        Simple reliability summary: mean item discrimination.
-
-        Higher average discrimination suggests the judge/system more consistently
-        separates strong vs weak responses across benchmark items.
-        """
+        """Mean item discrimination."""
         return self.mean_discrimination
 
 

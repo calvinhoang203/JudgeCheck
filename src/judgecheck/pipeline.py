@@ -1,7 +1,5 @@
 """
-Central analysis pipeline for JudgeCheck.
-
-All scripts should call functions here so future updates stay consistent.
+MT-Bench analysis orchestration. Entry point for scripts and extensions.
 """
 
 from __future__ import annotations

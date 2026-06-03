@@ -1,4 +1,4 @@
-"""Plain-language run summaries for non-expert audiences."""
+"""Text summaries written after each pipeline run."""
 
 from __future__ import annotations
 
@@ -33,15 +33,11 @@ def write_text_summary(
     peak_theta: float | None = None,
     coverage_target: float = 0.8,
 ) -> Path:
-    """Write ``SUMMARY.txt`` — quick read without opening HTML or CSVs."""
+    """Write ``outputs/SUMMARY.txt``."""
     lines = [
         "JudgeCheck Run Summary",
         f"Version: {__version__}",
         "=" * 50,
-        "",
-        "WHAT THIS MEANS (plain language)",
-        "  JudgeCheck checks which MT-Bench questions actually help",
-        "  tell good AI answers from bad ones.",
         "",
     ]
 
@@ -104,14 +100,10 @@ def write_text_summary(
 
     lines.extend(
         [
-            "FILES TO OPEN",
-            "  recommended_benchmark_items.csv — high-value question set",
-            "  weak_benchmark_items.csv — low discrimination (pairwise)",
-            "  weak_score_items.csv     — low discrimination (1–10 scores)",
-            "  pairwise_winner_agreement.csv — human vs GPT-4 picks",
-            "  report.html          — visual report (best for sharing)",
-            "  SUMMARY.txt          — this file",
-            "  docs/GETTING_STARTED.md — how to read the numbers",
+            "FILES",
+            "  report.html, SUMMARY.txt",
+            "  docs/GUIDE.md — metric definitions",
+            "  AGENTS.md — codebase notes for development",
             "",
         ]
     )
@@ -148,4 +140,4 @@ def print_console_summary(
     if model_ranking is not None and not model_ranking.empty:
         top = model_ranking.iloc[0]
         print(f"  Top model by GPT-4 score: {top['model']} ({top['mean_score']:.2f})")
-    print("  Open outputs/SUMMARY.txt or outputs/report.html for details.")
+    print("  See outputs/SUMMARY.txt and docs/GUIDE.md")
