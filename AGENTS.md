@@ -62,6 +62,7 @@ src/judgecheck/
 | `human_item_parameters.csv` | `run_pairwise_analysis` |
 | `recommended_benchmark_items.csv` | `run_score_analysis` + `recommend_benchmark_items` |
 | `pairwise_winner_agreement.csv` | `insights.pairwise_winner_agreement` |
+| `pairwise_agreement_by_category.csv` | `insights.pairwise_agreement_by_category` |
 | `weak_benchmark_items.csv` | `insights.select_weak_items` |
 
 ## Version
@@ -71,16 +72,14 @@ Current: `judgecheck.__version__` in `src/judgecheck/__init__.py`. Log changes i
 ## Roadmap (not done)
 
 - Additional LLM judges (need dataset with non–GPT-4 pairwise labels)
-- Category-level agreement breakdown
 - Optional PDF export
 
 ## Tests
 
-No automated test suite yet. Smoke test:
-
 ```powershell
 $env:PYTHONPATH = "src"
-python scripts/run_analysis.py --pairwise-only
+python -m unittest discover -s tests
+python scripts/run_analysis.py --pairwise-only   # integration smoke test (~minutes)
 ```
 
 ## Citation

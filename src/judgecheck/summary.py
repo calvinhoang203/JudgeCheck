@@ -28,6 +28,7 @@ def write_text_summary(
     human_top_item: str | None = None,
     human_weak_item: str | None = None,
     winner_agreement_rate: float | None = None,
+    winner_agreement_by_category: pd.DataFrame | None = None,
     recommended_items: pd.DataFrame | None = None,
     model_ranking: pd.DataFrame | None = None,
     peak_theta: float | None = None,
@@ -68,6 +69,21 @@ def write_text_summary(
                 f"  Human vs GPT-4 winner agreement: {winner_agreement_rate * 100:.1f}%"
             )
             lines.append("  See pairwise_winner_agreement.csv for details.")
+        if (
+            winner_agreement_by_category is not None
+            and not winner_agreement_by_category.empty
+        ):
+            low = winner_agreement_by_category.iloc[0]
+            high = winner_agreement_by_category.iloc[-1]
+            lines.append(
+                f"  Lowest category agreement: {low['category_label']} "
+                f"({low['pct_agreement']:.1f}%)"
+            )
+            lines.append(
+                f"  Highest category agreement: {high['category_label']} "
+                f"({high['pct_agreement']:.1f}%)"
+            )
+            lines.append("  See pairwise_agreement_by_category.csv.")
         lines.append("")
 
     if recommended_items is not None and not recommended_items.empty:

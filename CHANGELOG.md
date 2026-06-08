@@ -3,6 +3,15 @@
 All notable JudgeCheck updates are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.4] — 2026-05-30
+
+### Added
+- **Category-level winner agreement** — `pairwise_agreement_by_category.csv` and report table
+- **`tests/`** — unit tests for insights and data matrix prep (`python -m unittest discover -s tests`)
+
+### Fixed
+- **`run_pairwise_analysis`** — HTML report no longer referenced undefined `pairwise` when building winner agreement rate
+
 ## [0.3.3] — 2026-05-30
 
 ### Changed

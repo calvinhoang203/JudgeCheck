@@ -57,6 +57,7 @@ class PairwiseOutputs:
     weak_human_items: pd.DataFrame | None = None
     winner_agreement: pd.DataFrame | None = None
     winner_agreement_by_item: pd.DataFrame | None = None
+    winner_agreement_by_category: pd.DataFrame | None = None
 
 
 @dataclass
@@ -112,7 +113,9 @@ def run_pairwise_analysis(
     weak_human = enrich_with_labels(
         select_weak_items(human_params, n=config.weak_item_count), catalog
     )
-    agree_overall, agree_by_item = pairwise_winner_agreement(human_df, gpt4_df)
+    agree_overall, agree_by_item, agree_by_category = pairwise_winner_agreement(
+        human_df, gpt4_df, catalog=catalog
+    )
     agree_by_item = enrich_with_labels(agree_by_item, catalog)
 
     human_params.to_csv(output_dir / "human_item_parameters.csv", index=False)
@@ -124,6 +127,9 @@ def run_pairwise_analysis(
     weak_human.to_csv(output_dir / "weak_benchmark_items.csv", index=False)
     agree_overall.to_csv(output_dir / "pairwise_winner_agreement.csv", index=False)
     agree_by_item.to_csv(output_dir / "pairwise_agreement_by_item.csv", index=False)
+    agree_by_category.to_csv(
+        output_dir / "pairwise_agreement_by_category.csv", index=False
+    )
 
     plot_item_discrimination(
         human_results,
@@ -164,11 +170,11 @@ def run_pairwise_analysis(
         comparison=comparison,
         score_outputs=None,
         winner_agreement_rate=(
-            float(pairwise.winner_agreement["agreement_rate"].iloc[0])
-            if pairwise.winner_agreement is not None
-            and not pairwise.winner_agreement.empty
+            float(agree_overall["agreement_rate"].iloc[0])
+            if not agree_overall.empty
             else None
         ),
+        winner_agreement_by_category=agree_by_category,
         output_path=output_dir / "report.html",
     )
 
@@ -184,6 +190,7 @@ def run_pairwise_analysis(
         weak_human_items=weak_human,
         winner_agreement=agree_overall,
         winner_agreement_by_item=agree_by_item,
+        winner_agreement_by_category=agree_by_category,
     )
 
 
@@ -290,6 +297,7 @@ def _finalize_outputs(
     human_top = None
     human_weak = None
     agree_rate = None
+    agree_by_category = None
     comparison = None
     if pairwise is not None:
         comparison = pairwise.comparison
@@ -301,6 +309,7 @@ def _finalize_outputs(
             human_weak = w.get("short_label", w["item_id"])
         if pairwise.winner_agreement is not None and not pairwise.winner_agreement.empty:
             agree_rate = float(pairwise.winner_agreement["agreement_rate"].iloc[0])
+        agree_by_category = pairwise.winner_agreement_by_category
 
     peak_theta = None
     recommended = None
@@ -317,6 +326,7 @@ def _finalize_outputs(
         human_top_item=human_top,
         human_weak_item=human_weak,
         winner_agreement_rate=agree_rate,
+        winner_agreement_by_category=agree_by_category,
         recommended_items=recommended,
         model_ranking=ranking,
         peak_theta=peak_theta,
@@ -362,6 +372,7 @@ def run_full_analysis(
             and not pairwise.winner_agreement.empty
             else None
         ),
+        winner_agreement_by_category=pairwise.winner_agreement_by_category,
         output_path=output_dir / "report.html",
     )
 

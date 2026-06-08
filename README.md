@@ -54,6 +54,14 @@ data/               cached gpt4_single.jsonl (gitignored)
 | `recommended_benchmark_items.csv` | High-information question subset |
 | `weak_benchmark_items.csv` | Low discrimination (pairwise) |
 | `pairwise_winner_agreement.csv` | Human vs GPT-4 winner agreement |
+| `pairwise_agreement_by_category.csv` | Winner agreement by MT-Bench category |
+
+## Tests
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m unittest discover -s tests
+```
 
 ## IRT mapping
 

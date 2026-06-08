@@ -106,6 +106,7 @@ def generate_html_report(
     output_path: str | Path,
     score_outputs=None,
     winner_agreement_rate: float | None = None,
+    winner_agreement_by_category: pd.DataFrame | None = None,
 ) -> Path:
     """Write ``outputs/report.html``."""
     output_path = Path(output_path)
@@ -114,6 +115,22 @@ def generate_html_report(
     human_row = comparison.loc[comparison["judge_system"] == "human_experts"].iloc[0]
     gpt4_row = comparison.loc[comparison["judge_system"] == "gpt4_judge"].iloc[0]
     spearman = comparison.attrs.get("discrimination_spearman_r")
+
+    category_agreement_block = ""
+    if (
+        winner_agreement_by_category is not None
+        and not winner_agreement_by_category.empty
+    ):
+        category_agreement_block = f"""
+  <div class="card">
+    <h2>Winner agreement by category</h2>
+    {_table_html(
+        winner_agreement_by_category,
+        ["category_label", "n_comparisons", "pct_agreement"],
+    )}
+    <p class="note">Full table: pairwise_agreement_by_category.csv</p>
+  </div>
+"""
 
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
@@ -215,6 +232,8 @@ def generate_html_report(
     <h2>Discrimination scatter (human vs GPT-4)</h2>
     <img src="human_vs_gpt4_discrimination.png" alt="Human vs GPT-4 discrimination scatter">
   </div>
+
+  {category_agreement_block}
 
   {_score_section(score_outputs)}
 
