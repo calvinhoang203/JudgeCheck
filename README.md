@@ -21,9 +21,15 @@ pip install -r requirements.txt
 python scripts/run_analysis.py
 ```
 
-Options: `--pairwise-only`, `--scores-only`, `--coverage 0.9` (default 0.8).
+Options: `--pairwise-only`, `--scores-only`, `--coverage 0.9` (default 0.8), `--no-pdf`.
 
-Outputs: `outputs/SUMMARY.txt`, `outputs/report.html`, CSVs and PNGs.
+Outputs: `outputs/SUMMARY.txt`, `outputs/report.html`, `outputs/report.pdf`, CSVs and PNGs.
+
+Rebuild PDF only (no re-analysis):
+
+```powershell
+python scripts/export_pdf.py
+```
 
 ## Two analysis tracks
 
@@ -48,6 +54,7 @@ data/               cached gpt4_single.jsonl (gitignored)
 |------|-------------|
 | `SUMMARY.txt` | Text headline results |
 | `report.html` | HTML report with figures |
+| `report.pdf` | PDF summary + figures (shareable) |
 | `human_item_parameters.csv` | Item discrimination (human pairwise) |
 | `human_judge_abilities.csv` | Annotator θ estimates |
 | `score_item_parameters.csv` | Item discrimination (1–10 scores) |

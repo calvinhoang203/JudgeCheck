@@ -32,6 +32,7 @@ from judgecheck.grm import (
     test_information_curve,
 )
 from judgecheck.insights import pairwise_winner_agreement, select_weak_items
+from judgecheck.pdf_report import generate_pdf_report
 from judgecheck.report import generate_html_report
 from judgecheck.summary import model_score_ranking, print_console_summary, write_text_summary
 from judgecheck.viz import (
@@ -339,6 +340,15 @@ def _finalize_outputs(
         winner_agreement_rate=agree_rate,
         coverage_target=config.coverage,
     )
+
+    if config.export_pdf:
+        if pairwise is not None and scores is not None:
+            mode = "full"
+        elif pairwise is not None:
+            mode = "pairwise"
+        else:
+            mode = "scores"
+        generate_pdf_report(output_dir, mode=mode)
 
 
 def run_full_analysis(

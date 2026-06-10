@@ -20,7 +20,7 @@ python scripts/run_analysis.py --scores-only
 python scripts/run_analysis.py --coverage 0.9
 ```
 
-Outputs go to `outputs/`. Start with `outputs/SUMMARY.txt` or `outputs/report.html`.
+Outputs go to `outputs/`. Start with `outputs/SUMMARY.txt`, `outputs/report.html`, or `outputs/report.pdf`.
 
 ## Architecture
 
@@ -36,6 +36,7 @@ src/judgecheck/
   summary.py                → SUMMARY.txt + console bullets
   viz.py                    → matplotlib plots
   report.py                 → HTML report
+  pdf_report.py             → PDF export (summary + figures)
 ```
 
 **Rule for new features:** implement in a module → call from `pipeline.py` → expose CLI flag if needed → update `CHANGELOG.md` and output table in `README.md`.
@@ -72,7 +73,6 @@ Current: `judgecheck.__version__` in `src/judgecheck/__init__.py`. Log changes i
 ## Roadmap (not done)
 
 - Additional LLM judges (need dataset with non–GPT-4 pairwise labels)
-- Optional PDF export
 
 ## Tests
 

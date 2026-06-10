@@ -3,6 +3,13 @@
 All notable JudgeCheck updates are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.5] — 2026-05-30
+
+### Added
+- **`report.pdf`** — summary text + key figures, written after each run (matplotlib)
+- **`scripts/export_pdf.py`** — rebuild PDF from existing `outputs/` without re-running analysis
+- **`--no-pdf`** CLI flag to skip PDF export
+
 ## [0.3.4] — 2026-05-30
 
 ### Added

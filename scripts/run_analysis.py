@@ -57,9 +57,14 @@ def main() -> None:
         action="store_true",
         help="Run only GPT-4 single-score (1–10) analysis",
     )
+    parser.add_argument(
+        "--no-pdf",
+        action="store_true",
+        help="Skip report.pdf export",
+    )
     args = parser.parse_args()
 
-    config = AnalysisConfig(coverage=args.coverage)
+    config = AnalysisConfig(coverage=args.coverage, export_pdf=not args.no_pdf)
 
     print("=" * 60)
     print(f"JudgeCheck v{__version__} — MT-Bench IRT analysis")
@@ -81,6 +86,8 @@ def main() -> None:
     print(f"  Summary: {(args.output / 'SUMMARY.txt').resolve()}")
     if not args.scores_only:
         print(f"  Report:  {(args.output / 'report.html').resolve()}")
+    if config.export_pdf and (args.output / "report.pdf").exists():
+        print(f"  PDF:     {(args.output / 'report.pdf').resolve()}")
 
 
 if __name__ == "__main__":
