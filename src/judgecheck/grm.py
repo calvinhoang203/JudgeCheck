@@ -371,6 +371,32 @@ def summarize_by_category(item_frame: pd.DataFrame) -> pd.DataFrame:
     return summary
 
 
+def compare_category_discrimination(
+    human_categories: pd.DataFrame,
+    gpt4_categories: pd.DataFrame,
+) -> pd.DataFrame:
+    """Side-by-side mean discrimination by MT-Bench category."""
+    human = human_categories.rename(
+        columns={
+            "n_items": "n_items_human",
+            "mean_discrimination": "mean_discrimination_human",
+            "median_discrimination": "median_discrimination_human",
+        }
+    )
+    gpt4 = gpt4_categories.rename(
+        columns={
+            "n_items": "n_items_gpt4",
+            "mean_discrimination": "mean_discrimination_gpt4",
+            "median_discrimination": "median_discrimination_gpt4",
+        }
+    )
+    merged = human.merge(gpt4, on=["category", "category_label"], how="inner")
+    merged["discrimination_gap"] = (
+        merged["mean_discrimination_human"] - merged["mean_discrimination_gpt4"]
+    )
+    return merged.sort_values("discrimination_gap").reset_index(drop=True)
+
+
 def compare_judges(
     human: GRMResults,
     gpt4: GRMResults,

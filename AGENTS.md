@@ -64,6 +64,7 @@ src/judgecheck/
 | `recommended_benchmark_items.csv` | `run_score_analysis` + `recommend_benchmark_items` |
 | `pairwise_winner_agreement.csv` | `insights.pairwise_winner_agreement` |
 | `pairwise_agreement_by_category.csv` | `insights.pairwise_agreement_by_category` |
+| `category_discrimination_comparison.csv` | `grm.compare_category_discrimination` |
 | `weak_benchmark_items.csv` | `insights.select_weak_items` |
 
 ## Version

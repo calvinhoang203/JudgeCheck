@@ -3,6 +3,11 @@
 All notable JudgeCheck updates are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.6] — 2026-05-30
+
+### Added
+- **Category discrimination comparison** — human vs GPT-4 mean discrimination by MT-Bench topic (`category_discrimination_comparison.csv`, plot, report table)
+
 ## [0.3.5] — 2026-05-30
 
 ### Added

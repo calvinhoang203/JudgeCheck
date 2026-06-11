@@ -62,6 +62,7 @@ data/               cached gpt4_single.jsonl (gitignored)
 | `weak_benchmark_items.csv` | Low discrimination (pairwise) |
 | `pairwise_winner_agreement.csv` | Human vs GPT-4 winner agreement |
 | `pairwise_agreement_by_category.csv` | Winner agreement by MT-Bench category |
+| `category_discrimination_comparison.csv` | Human vs GPT-4 discrimination by category |
 
 ## Tests
 

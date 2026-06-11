@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 
@@ -176,6 +177,47 @@ def plot_category_discrimination(
     ax.set_ylabel("Average discrimination")
     ax.set_title(f"Which topic areas produce the sharpest questions? ({judge_label})")
     ax.tick_params(axis="x", rotation=30)
+    fig.tight_layout()
+
+    if save_path:
+        path = Path(save_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(path, dpi=150, bbox_inches="tight")
+
+    return fig
+
+
+def plot_category_discrimination_comparison(
+    comparison: pd.DataFrame,
+    *,
+    save_path: str | Path | None = None,
+) -> plt.Figure:
+    """Grouped bar chart: human vs GPT-4 mean discrimination by category."""
+    ordered = comparison.sort_values("category_label").reset_index(drop=True)
+    x = np.arange(len(ordered))
+    width = 0.36
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.bar(
+        x - width / 2,
+        ordered["mean_discrimination_human"],
+        width,
+        label="Human experts",
+        color="#2E86AB",
+    )
+    ax.bar(
+        x + width / 2,
+        ordered["mean_discrimination_gpt4"],
+        width,
+        label="GPT-4 pairwise",
+        color="#A23B72",
+    )
+    ax.set_xticks(x)
+    ax.set_xticklabels(ordered["category_label"], rotation=30, ha="right")
+    ax.set_xlabel("Question category")
+    ax.set_ylabel("Mean discrimination")
+    ax.set_title("Human vs GPT-4 discrimination by category")
+    ax.legend(frameon=False)
     fig.tight_layout()
 
     if save_path:

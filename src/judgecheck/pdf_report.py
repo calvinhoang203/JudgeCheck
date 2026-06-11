@@ -17,6 +17,7 @@ PAIRWISE_FIGURES: list[tuple[str, str]] = [
     ("Sharpest questions (human)", "human_top_discrimination.png"),
     ("Human vs GPT-4 discrimination", "human_vs_gpt4_discrimination.png"),
     ("By category (human)", "human_category_discrimination.png"),
+    ("Discrimination by category", "category_discrimination_comparison.png"),
     ("Human judge ability", "human_judge_abilities.png"),
 ]
 

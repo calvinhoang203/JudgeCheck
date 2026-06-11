@@ -107,6 +107,7 @@ def generate_html_report(
     score_outputs=None,
     winner_agreement_rate: float | None = None,
     winner_agreement_by_category: pd.DataFrame | None = None,
+    category_discrimination_comparison: pd.DataFrame | None = None,
 ) -> Path:
     """Write ``outputs/report.html``."""
     output_path = Path(output_path)
@@ -129,6 +130,28 @@ def generate_html_report(
         ["category_label", "n_comparisons", "pct_agreement"],
     )}
     <p class="note">Full table: pairwise_agreement_by_category.csv</p>
+  </div>
+"""
+
+    category_discrimination_block = ""
+    if (
+        category_discrimination_comparison is not None
+        and not category_discrimination_comparison.empty
+    ):
+        category_discrimination_block = f"""
+  <div class="card">
+    <h2>Discrimination by category (human vs GPT-4)</h2>
+    {_table_html(
+        category_discrimination_comparison,
+        [
+            "category_label",
+            "mean_discrimination_human",
+            "mean_discrimination_gpt4",
+            "discrimination_gap",
+        ],
+    )}
+    <img src="category_discrimination_comparison.png" alt="Category discrimination comparison">
+    <p class="note">Full table: category_discrimination_comparison.csv</p>
   </div>
 """
 
@@ -234,6 +257,8 @@ def generate_html_report(
   </div>
 
   {category_agreement_block}
+
+  {category_discrimination_block}
 
   {_score_section(score_outputs)}
 

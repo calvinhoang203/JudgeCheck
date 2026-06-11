@@ -29,6 +29,7 @@ def write_text_summary(
     human_weak_item: str | None = None,
     winner_agreement_rate: float | None = None,
     winner_agreement_by_category: pd.DataFrame | None = None,
+    category_discrimination_comparison: pd.DataFrame | None = None,
     recommended_items: pd.DataFrame | None = None,
     model_ranking: pd.DataFrame | None = None,
     peak_theta: float | None = None,
@@ -84,6 +85,21 @@ def write_text_summary(
                 f"({high['pct_agreement']:.1f}%)"
             )
             lines.append("  See pairwise_agreement_by_category.csv.")
+        if (
+            category_discrimination_comparison is not None
+            and not category_discrimination_comparison.empty
+        ):
+            low = category_discrimination_comparison.iloc[0]
+            high = category_discrimination_comparison.iloc[-1]
+            lines.append(
+                f"  Largest human<GPT-4 discrimination gap: {low['category_label']} "
+                f"({low['discrimination_gap']:.2f})"
+            )
+            lines.append(
+                f"  Largest human>GPT-4 discrimination gap: {high['category_label']} "
+                f"({high['discrimination_gap']:.2f})"
+            )
+            lines.append("  See category_discrimination_comparison.csv.")
         lines.append("")
 
     if recommended_items is not None and not recommended_items.empty:

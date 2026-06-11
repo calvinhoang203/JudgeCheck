@@ -21,6 +21,7 @@ from judgecheck.data import (
     summarize_dataset,
 )
 from judgecheck.grm import (
+    compare_category_discrimination,
     compare_judges,
     compare_item_discriminations,
     fit_grm,
@@ -37,6 +38,7 @@ from judgecheck.report import generate_html_report
 from judgecheck.summary import model_score_ranking, print_console_summary, write_text_summary
 from judgecheck.viz import (
     plot_category_discrimination,
+    plot_category_discrimination_comparison,
     plot_discrimination_comparison,
     plot_item_discrimination,
     plot_judge_abilities,
@@ -59,6 +61,7 @@ class PairwiseOutputs:
     winner_agreement: pd.DataFrame | None = None
     winner_agreement_by_item: pd.DataFrame | None = None
     winner_agreement_by_category: pd.DataFrame | None = None
+    category_discrimination_comparison: pd.DataFrame | None = None
 
 
 @dataclass
@@ -111,6 +114,7 @@ def run_pairwise_analysis(
     comparison = compare_judges(human_results, gpt4_results)
     human_categories = summarize_by_category(human_params)
     gpt4_categories = summarize_by_category(gpt4_params)
+    category_comparison = compare_category_discrimination(human_categories, gpt4_categories)
     weak_human = enrich_with_labels(
         select_weak_items(human_params, n=config.weak_item_count), catalog
     )
@@ -130,6 +134,9 @@ def run_pairwise_analysis(
     agree_by_item.to_csv(output_dir / "pairwise_agreement_by_item.csv", index=False)
     agree_by_category.to_csv(
         output_dir / "pairwise_agreement_by_category.csv", index=False
+    )
+    category_comparison.to_csv(
+        output_dir / "category_discrimination_comparison.csv", index=False
     )
 
     plot_item_discrimination(
@@ -159,6 +166,10 @@ def run_pairwise_analysis(
         judge_label="human experts",
         save_path=output_dir / "human_category_discrimination.png",
     )
+    plot_category_discrimination_comparison(
+        category_comparison,
+        save_path=output_dir / "category_discrimination_comparison.png",
+    )
 
     generate_html_report(
         human_results=human_results,
@@ -176,6 +187,7 @@ def run_pairwise_analysis(
             else None
         ),
         winner_agreement_by_category=agree_by_category,
+        category_discrimination_comparison=category_comparison,
         output_path=output_dir / "report.html",
     )
 
@@ -192,6 +204,7 @@ def run_pairwise_analysis(
         winner_agreement=agree_overall,
         winner_agreement_by_item=agree_by_item,
         winner_agreement_by_category=agree_by_category,
+        category_discrimination_comparison=category_comparison,
     )
 
 
@@ -299,6 +312,7 @@ def _finalize_outputs(
     human_weak = None
     agree_rate = None
     agree_by_category = None
+    category_disc_comparison = None
     comparison = None
     if pairwise is not None:
         comparison = pairwise.comparison
@@ -311,6 +325,7 @@ def _finalize_outputs(
         if pairwise.winner_agreement is not None and not pairwise.winner_agreement.empty:
             agree_rate = float(pairwise.winner_agreement["agreement_rate"].iloc[0])
         agree_by_category = pairwise.winner_agreement_by_category
+        category_disc_comparison = pairwise.category_discrimination_comparison
 
     peak_theta = None
     recommended = None
@@ -328,6 +343,7 @@ def _finalize_outputs(
         human_weak_item=human_weak,
         winner_agreement_rate=agree_rate,
         winner_agreement_by_category=agree_by_category,
+        category_discrimination_comparison=category_disc_comparison,
         recommended_items=recommended,
         model_ranking=ranking,
         peak_theta=peak_theta,
@@ -383,6 +399,7 @@ def run_full_analysis(
             else None
         ),
         winner_agreement_by_category=pairwise.winner_agreement_by_category,
+        category_discrimination_comparison=pairwise.category_discrimination_comparison,
         output_path=output_dir / "report.html",
     )
 
