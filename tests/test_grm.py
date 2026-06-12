@@ -6,7 +6,7 @@ import unittest
 
 import pandas as pd
 
-from judgecheck.grm import compare_category_discrimination
+from judgecheck.grm import compare_category_discrimination, recommend_benchmark_items
 
 
 class TestGrm(unittest.TestCase):
@@ -29,6 +29,20 @@ class TestGrm(unittest.TestCase):
         math = result.loc[result["category"] == "math"].iloc[0]
         self.assertAlmostEqual(math["discrimination_gap"], -1.2)
         self.assertEqual(result.iloc[0]["category"], "writing")
+
+    def test_recommend_benchmark_items(self) -> None:
+        contributions = pd.DataFrame(
+            {
+                "item_id": ["a", "b", "c", "d"],
+                "information_at_peak": [4.0, 3.0, 2.0, 1.0],
+                "pct_of_total": [40.0, 30.0, 20.0, 10.0],
+                "cumulative_pct": [40.0, 70.0, 90.0, 100.0],
+                "rank": [1, 2, 3, 4],
+            }
+        )
+        rec = recommend_benchmark_items(contributions, coverage=0.8)
+        self.assertEqual(len(rec), 3)
+        self.assertGreaterEqual(rec["cumulative_pct"].iloc[-1], 80.0)
 
 
 if __name__ == "__main__":

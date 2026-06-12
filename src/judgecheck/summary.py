@@ -30,6 +30,8 @@ def write_text_summary(
     winner_agreement_rate: float | None = None,
     winner_agreement_by_category: pd.DataFrame | None = None,
     category_discrimination_comparison: pd.DataFrame | None = None,
+    recommended_pairwise_items: pd.DataFrame | None = None,
+    human_peak_theta: float | None = None,
     recommended_items: pd.DataFrame | None = None,
     model_ranking: pd.DataFrame | None = None,
     peak_theta: float | None = None,
@@ -100,7 +102,25 @@ def write_text_summary(
                 f"({high['discrimination_gap']:.2f})"
             )
             lines.append("  See category_discrimination_comparison.csv.")
-        lines.append("")
+        if (
+            recommended_pairwise_items is not None
+            and not recommended_pairwise_items.empty
+        ):
+            n = len(recommended_pairwise_items)
+            cov = recommended_pairwise_items["cumulative_pct"].iloc[-1]
+            lines.extend(
+                [
+                    "BENCHMARK DESIGNER — PAIRWISE (Part A)",
+                    f"  {n} questions cover ~{cov:.0f}% of diagnostic information "
+                    f"(target {coverage_target * 100:.0f}%).",
+                    "  See recommended_pairwise_items.csv for the list.",
+                ]
+            )
+            if human_peak_theta is not None:
+                lines.append(
+                    f"  Human pairwise benchmark peaks at θ ≈ {human_peak_theta:.1f}"
+                )
+            lines.append("")
 
     if recommended_items is not None and not recommended_items.empty:
         n = len(recommended_items)
@@ -149,6 +169,7 @@ def print_console_summary(
     *,
     pairwise_comparison: pd.DataFrame | None = None,
     recommended_items: pd.DataFrame | None = None,
+    recommended_pairwise_items: pd.DataFrame | None = None,
     model_ranking: pd.DataFrame | None = None,
     winner_agreement_rate: float | None = None,
     coverage_target: float = 0.8,
@@ -162,11 +183,18 @@ def print_console_summary(
         print(f"  Human discrimination (mean): {human['mean_discrimination']:.2f}")
     if winner_agreement_rate is not None:
         print(f"  Human vs GPT-4 winner agreement: {winner_agreement_rate * 100:.1f}%")
+    if recommended_pairwise_items is not None and not recommended_pairwise_items.empty:
+        n = len(recommended_pairwise_items)
+        cov = recommended_pairwise_items["cumulative_pct"].iloc[-1]
+        print(
+            f"  Pairwise: {n} items cover ~{cov:.0f}% of information "
+            f"(target {coverage_target * 100:.0f}%)"
+        )
     if recommended_items is not None and not recommended_items.empty:
         n = len(recommended_items)
         cov = recommended_items["cumulative_pct"].iloc[-1]
         print(
-            f"  {n} items cover ~{cov:.0f}% of information "
+            f"  Scores: {n} items cover ~{cov:.0f}% of information "
             f"(target {coverage_target * 100:.0f}%)"
         )
     if model_ranking is not None and not model_ranking.empty:

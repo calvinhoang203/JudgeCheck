@@ -3,6 +3,12 @@
 All notable JudgeCheck updates are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.7] — 2026-05-30
+
+### Added
+- **Pairwise benchmark designer** — smallest human-expert question set covering ~80% of test information (`recommended_pairwise_items.csv`, `human_test_information.png`)
+- **`human_test_information.csv`** / **`human_item_information.csv`** — pairwise track information curves (mirrors score track)
+
 ## [0.3.6] — 2026-05-30
 
 ### Added

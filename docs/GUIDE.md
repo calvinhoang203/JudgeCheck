@@ -31,6 +31,15 @@ Estimated for human annotators only. Higher θ = more decisive/consistent on the
 
 GPT-4 rates each model per question. `score_test_information.png` shows where on the quality scale (θ) the benchmark is most informative (peak θ).
 
+## Benchmark designer
+
+Both tracks can recommend a minimal question set covering ~80% of diagnostic information (tune with `--coverage`):
+
+| Track | Output file |
+|-------|-------------|
+| Human pairwise | `recommended_pairwise_items.csv` |
+| GPT-4 scores | `recommended_benchmark_items.csv` |
+
 ## Pairwise coding
 
 MT-Bench human data is A-vs-B, not star ratings:

@@ -11,6 +11,25 @@ import pandas as pd
 from judgecheck.grm import GRMResults
 
 
+def _benchmark_block(
+    recommended: pd.DataFrame,
+    *,
+    csv_name: str,
+    heading: str,
+) -> str:
+    n_rec = len(recommended)
+    cov = recommended["cumulative_pct"].iloc[-1]
+    rec_lines = "".join(
+        f"<li>{escape(str(r.get('short_label', r['item_id'])))}</li>"
+        for _, r in recommended.head(5).iterrows()
+    )
+    return f"""
+    <h3>{heading} — {n_rec} items (~{cov:.0f}% information)</h3>
+    <ul>{rec_lines}</ul>
+    <p class="note">Full list: {csv_name}</p>
+"""
+
+
 def _score_section(score_outputs) -> str:
     if score_outputs is None:
         return ""
@@ -31,18 +50,11 @@ def _score_section(score_outputs) -> str:
 
     benchmark_block = ""
     if score_outputs.recommended_items is not None and not score_outputs.recommended_items.empty:
-        rec = score_outputs.recommended_items
-        n_rec = len(rec)
-        cov = rec["cumulative_pct"].iloc[-1]
-        rec_lines = "".join(
-            f"<li>{escape(str(r.get('short_label', r['item_id'])))}</li>"
-            for _, r in rec.head(5).iterrows()
+        benchmark_block = _benchmark_block(
+            score_outputs.recommended_items,
+            csv_name="recommended_benchmark_items.csv",
+            heading="Benchmark designer",
         )
-        benchmark_block = f"""
-    <h3>Benchmark designer — {n_rec} items (~{cov:.0f}% information)</h3>
-    <ul>{rec_lines}</ul>
-    <p class="note">Full list: recommended_benchmark_items.csv</p>
-"""
 
     return f"""
   <div class="card">
@@ -108,6 +120,8 @@ def generate_html_report(
     winner_agreement_rate: float | None = None,
     winner_agreement_by_category: pd.DataFrame | None = None,
     category_discrimination_comparison: pd.DataFrame | None = None,
+    recommended_pairwise_items: pd.DataFrame | None = None,
+    human_peak_theta: float | None = None,
 ) -> Path:
     """Write ``outputs/report.html``."""
     output_path = Path(output_path)
@@ -156,6 +170,21 @@ def generate_html_report(
 """
 
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+    pairwise_benchmark_block = ""
+    if recommended_pairwise_items is not None and not recommended_pairwise_items.empty:
+        pairwise_benchmark_block = _benchmark_block(
+            recommended_pairwise_items,
+            csv_name="recommended_pairwise_items.csv",
+            heading="Benchmark designer (human pairwise)",
+        )
+        if human_peak_theta is not None:
+            pairwise_benchmark_block += (
+                f'<p class="note">Peak information θ ≈ {human_peak_theta:.1f}</p>'
+            )
+        pairwise_benchmark_block += (
+            '<img src="human_test_information.png" alt="Human test information">'
+        )
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -225,6 +254,7 @@ def generate_html_report(
       Human experts: {int(human_row['n_participants'])} annotators.
       GPT-4: {int(gpt4_row['n_responses'])} pairwise judgments.
     </p>
+    {pairwise_benchmark_block}
   </div>
 
   <div class="card">
