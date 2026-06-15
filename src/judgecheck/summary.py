@@ -36,6 +36,7 @@ def write_text_summary(
     model_ranking: pd.DataFrame | None = None,
     peak_theta: float | None = None,
     coverage_target: float = 0.8,
+    recommended_overlap_summary: pd.DataFrame | None = None,
 ) -> Path:
     """Write ``outputs/SUMMARY.txt``."""
     lines = [
@@ -137,6 +138,19 @@ def write_text_summary(
             lines.append(f"  Benchmark works hardest around quality level θ ≈ {peak_theta:.1f}")
         lines.append("")
 
+    if recommended_overlap_summary is not None and not recommended_overlap_summary.empty:
+        row = recommended_overlap_summary.iloc[0]
+        lines.extend(
+            [
+                "RECOMMENDED SET OVERLAP",
+                f"  Items in both pairwise and score sets: {int(row['n_both'])}",
+                f"  Jaccard similarity: {row['jaccard']:.2f}",
+                f"  {row['pct_pairwise_also_in_score']:.0f}% of pairwise picks also in score set",
+                "  See recommended_items_overlap_detail.csv",
+                "",
+            ]
+        )
+
     if model_ranking is not None and not model_ranking.empty:
         top = model_ranking.iloc[0]
         bottom = model_ranking.iloc[-1]
@@ -172,6 +186,7 @@ def print_console_summary(
     recommended_pairwise_items: pd.DataFrame | None = None,
     model_ranking: pd.DataFrame | None = None,
     winner_agreement_rate: float | None = None,
+    recommended_overlap_summary: pd.DataFrame | None = None,
     coverage_target: float = 0.8,
 ) -> None:
     """Print headline findings after a pipeline run."""
@@ -196,6 +211,12 @@ def print_console_summary(
         print(
             f"  Scores: {n} items cover ~{cov:.0f}% of information "
             f"(target {coverage_target * 100:.0f}%)"
+        )
+    if recommended_overlap_summary is not None and not recommended_overlap_summary.empty:
+        row = recommended_overlap_summary.iloc[0]
+        print(
+            f"  Recommended overlap: {int(row['n_both'])} items in both sets "
+            f"(Jaccard {row['jaccard']:.2f})"
         )
     if model_ranking is not None and not model_ranking.empty:
         top = model_ranking.iloc[0]

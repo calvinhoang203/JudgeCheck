@@ -7,6 +7,7 @@ import unittest
 import pandas as pd
 
 from judgecheck.insights import (
+    compare_recommended_sets,
     pairwise_agreement_by_category,
     pairwise_winner_agreement,
     select_weak_items,
@@ -55,6 +56,25 @@ class TestInsights(unittest.TestCase):
         self.assertEqual(len(by_category), 2)
         self.assertEqual(by_category.iloc[0]["category_label"], "Writing")
         self.assertAlmostEqual(by_category.iloc[0]["agreement_rate"], 0.0)
+
+    def test_compare_recommended_sets(self) -> None:
+        pairwise = pd.DataFrame(
+            {
+                "item_id": ["1_t1", "2_t1", "3_t1"],
+                "short_label": ["Q1", "Q2", "Q3"],
+            }
+        )
+        score = pd.DataFrame(
+            {
+                "item_id": ["2_t1", "3_t1", "4_t1"],
+                "short_label": ["Q2", "Q3", "Q4"],
+            }
+        )
+        summary, detail = compare_recommended_sets(pairwise, score)
+        self.assertEqual(summary.loc[0, "n_both"], 2)
+        self.assertAlmostEqual(summary.loc[0, "jaccard"], 0.5)
+        self.assertEqual(len(detail), 4)
+        self.assertEqual(len(detail[detail["overlap_group"] == "both"]), 2)
 
     def test_pairwise_agreement_by_category_empty_catalog(self) -> None:
         merged = pd.DataFrame(

@@ -3,6 +3,11 @@
 All notable JudgeCheck updates are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.8] — 2026-05-30
+
+### Added
+- **Recommended set overlap** — compares pairwise vs score benchmark picks (`recommended_items_overlap_summary.csv`, `recommended_items_overlap_detail.csv`; full runs only)
+
 ## [0.3.7] — 2026-05-30
 
 ### Added

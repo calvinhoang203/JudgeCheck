@@ -111,3 +111,79 @@ def pairwise_agreement_by_category(
         .sort_values("agreement_rate")
         .reset_index(drop=True)
     )
+
+
+def compare_recommended_sets(
+    pairwise_items: pd.DataFrame,
+    score_items: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Compare recommended question sets from pairwise and score tracks.
+
+    Returns
+    -------
+    summary : one-row overlap statistics
+    detail : union of recommended items with membership flags
+    """
+    pw_ids = set(pairwise_items["item_id"])
+    sc_ids = set(score_items["item_id"])
+    union = pw_ids | sc_ids
+    both = pw_ids & sc_ids
+
+    summary = pd.DataFrame(
+        [
+            {
+                "n_pairwise": len(pw_ids),
+                "n_score": len(sc_ids),
+                "n_both": len(both),
+                "n_only_pairwise": len(pw_ids - sc_ids),
+                "n_only_score": len(sc_ids - pw_ids),
+                "jaccard": len(both) / len(union) if union else 0.0,
+                "pct_pairwise_also_in_score": (
+                    len(both) / len(pw_ids) * 100 if pw_ids else 0.0
+                ),
+            }
+        ]
+    )
+
+    label_lookup = pd.concat(
+        [
+            pairwise_items.set_index("item_id"),
+            score_items.set_index("item_id"),
+        ],
+        axis=0,
+    )
+    label_lookup = label_lookup[~label_lookup.index.duplicated(keep="first")]
+
+    rows: list[dict] = []
+    for item_id in sorted(union):
+        in_pw = item_id in pw_ids
+        in_sc = item_id in sc_ids
+        if in_pw and in_sc:
+            group = "both"
+        elif in_pw:
+            group = "pairwise_only"
+        else:
+            group = "score_only"
+        row: dict = {
+            "item_id": item_id,
+            "in_pairwise": in_pw,
+            "in_score": in_sc,
+            "overlap_group": group,
+        }
+        if item_id in label_lookup.index:
+            meta = label_lookup.loc[item_id]
+            for col in ("short_label", "category_label"):
+                if col in meta.index and pd.notna(meta[col]):
+                    row[col] = meta[col]
+        rows.append(row)
+
+    detail = pd.DataFrame(rows)
+    group_order = {"both": 0, "pairwise_only": 1, "score_only": 2}
+    detail["_sort"] = detail["overlap_group"].map(group_order)
+    detail = (
+        detail.sort_values(["_sort", "item_id"])
+        .drop(columns="_sort")
+        .reset_index(drop=True)
+    )
+    return summary, detail

@@ -60,6 +60,7 @@ data/               cached gpt4_single.jsonl (gitignored)
 | `score_item_parameters.csv` | Item discrimination (1–10 scores) |
 | `recommended_benchmark_items.csv` | High-information question subset (score track) |
 | `recommended_pairwise_items.csv` | High-information question subset (human pairwise) |
+| `recommended_items_overlap_detail.csv` | Pairwise vs score recommended-set overlap (full run) |
 | `weak_benchmark_items.csv` | Low discrimination (pairwise) |
 | `pairwise_winner_agreement.csv` | Human vs GPT-4 winner agreement |
 | `pairwise_agreement_by_category.csv` | Winner agreement by MT-Bench category |

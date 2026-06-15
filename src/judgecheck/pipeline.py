@@ -32,7 +32,11 @@ from judgecheck.grm import (
     summarize_by_category,
     test_information_curve,
 )
-from judgecheck.insights import pairwise_winner_agreement, select_weak_items
+from judgecheck.insights import (
+    compare_recommended_sets,
+    pairwise_winner_agreement,
+    select_weak_items,
+)
 from judgecheck.pdf_report import generate_pdf_report
 from judgecheck.report import generate_html_report
 from judgecheck.summary import model_score_ranking, print_console_summary, write_text_summary
@@ -330,6 +334,7 @@ def _finalize_outputs(
     pairwise: PairwiseOutputs | None,
     scores: ScoreOutputs | None,
     config: AnalysisConfig | None = None,
+    recommended_overlap_summary: pd.DataFrame | None = None,
 ) -> None:
     """Write cross-cutting summaries (text file + console)."""
     config = config or AnalysisConfig()
@@ -383,6 +388,8 @@ def _finalize_outputs(
         model_ranking=ranking,
         peak_theta=peak_theta,
         coverage_target=config.coverage,
+        recommended_overlap_summary=recommended_overlap_summary,
+        recommended_overlap_summary=recommended_overlap_summary,
     )
     print_console_summary(
         pairwise_comparison=comparison,
@@ -390,6 +397,7 @@ def _finalize_outputs(
         recommended_pairwise_items=recommended_pairwise,
         model_ranking=ranking,
         winner_agreement_rate=agree_rate,
+        recommended_overlap_summary=recommended_overlap_summary,
         coverage_target=config.coverage,
     )
 
@@ -417,6 +425,24 @@ def run_full_analysis(
         pairwise_human_params=pairwise.human_params,
         config=config,
     )
+
+    overlap_summary = None
+    overlap_detail = None
+    pw_rec = pairwise.recommended_pairwise_items
+    sc_rec = scores.recommended_items
+    if (
+        pw_rec is not None
+        and sc_rec is not None
+        and not pw_rec.empty
+        and not sc_rec.empty
+    ):
+        overlap_summary, overlap_detail = compare_recommended_sets(pw_rec, sc_rec)
+        overlap_summary.to_csv(
+            output_dir / "recommended_items_overlap_summary.csv", index=False
+        )
+        overlap_detail.to_csv(
+            output_dir / "recommended_items_overlap_detail.csv", index=False
+        )
 
     generate_html_report(
         human_results=pairwise.human_results,
@@ -447,9 +473,17 @@ def run_full_analysis(
             and not pairwise.human_information.empty
             else None
         ),
+        recommended_overlap_summary=overlap_summary,
+        recommended_overlap_detail=overlap_detail,
         output_path=output_dir / "report.html",
     )
 
-    _finalize_outputs(output_dir, pairwise, scores, config=config)
+    _finalize_outputs(
+        output_dir,
+        pairwise,
+        scores,
+        config=config,
+        recommended_overlap_summary=overlap_summary,
+    )
 
     return pairwise, scores

@@ -122,6 +122,8 @@ def generate_html_report(
     category_discrimination_comparison: pd.DataFrame | None = None,
     recommended_pairwise_items: pd.DataFrame | None = None,
     human_peak_theta: float | None = None,
+    recommended_overlap_summary: pd.DataFrame | None = None,
+    recommended_overlap_detail: pd.DataFrame | None = None,
 ) -> Path:
     """Write ``outputs/report.html``."""
     output_path = Path(output_path)
@@ -185,6 +187,30 @@ def generate_html_report(
         pairwise_benchmark_block += (
             '<img src="human_test_information.png" alt="Human test information">'
         )
+
+    overlap_block = ""
+    if recommended_overlap_summary is not None and not recommended_overlap_summary.empty:
+        row = recommended_overlap_summary.iloc[0]
+        overlap_block = f"""
+  <div class="card">
+    <h2>Recommended sets overlap (pairwise vs scores)</h2>
+    <div class="metric">
+      <span>Items in both sets</span>
+      <strong>{int(row['n_both'])}</strong>
+    </div>
+    <div class="metric">
+      <span>Jaccard similarity</span>
+      <strong>{row['jaccard']:.2f}</strong>
+    </div>
+    <div class="metric">
+      <span>Pairwise rec. also in score set</span>
+      <strong>{row['pct_pairwise_also_in_score']:.0f}%</strong>
+    </div>
+    {"<p class='note'>Only pairwise: " + str(int(row['n_only_pairwise'])) + "; only scores: " + str(int(row['n_only_score'])) + "</p>"}
+    {"<ul>" + "".join(f"<li>{escape(str(r.get('short_label', r['item_id'])))} ({r['overlap_group']})</li>" for _, r in recommended_overlap_detail.head(8).iterrows()) + "</ul>" if recommended_overlap_detail is not None and not recommended_overlap_detail.empty else ""}
+    <p class="note">Full tables: recommended_items_overlap_summary.csv, recommended_items_overlap_detail.csv</p>
+  </div>
+"""
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -289,6 +315,8 @@ def generate_html_report(
   {category_agreement_block}
 
   {category_discrimination_block}
+
+  {overlap_block}
 
   {_score_section(score_outputs)}
 
