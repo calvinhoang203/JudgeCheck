@@ -187,3 +187,74 @@ def compare_recommended_sets(
         .reset_index(drop=True)
     )
     return summary, detail
+
+
+def _tie_mask(series: pd.Series) -> pd.Series:
+    return series.str.startswith("tie")
+
+
+def pairwise_tie_rates(
+    human_df: pd.DataFrame,
+    gpt4_df: pd.DataFrame,
+    catalog: pd.DataFrame | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Compare tie (indecisive) judgment rates for human experts vs GPT-4 pairwise.
+
+    Returns
+    -------
+    overall : tie rate per judge system
+    by_category : tie rates by MT-Bench category (needs catalog)
+    """
+    overall = pd.DataFrame(
+        [
+            {
+                "judge_system": "human_experts",
+                "n_judgments": len(human_df),
+                "tie_rate": _tie_mask(human_df["winner"]).mean(),
+            },
+            {
+                "judge_system": "gpt4_judge",
+                "n_judgments": len(gpt4_df),
+                "tie_rate": _tie_mask(gpt4_df["winner"]).mean(),
+            },
+        ]
+    )
+    overall["pct_tie"] = overall["tie_rate"] * 100
+
+    if catalog is None or human_df.empty or gpt4_df.empty:
+        return overall, pd.DataFrame(
+            columns=[
+                "category",
+                "category_label",
+                "tie_rate_human",
+                "tie_rate_gpt4",
+                "tie_rate_gap",
+                "pct_tie_human",
+                "pct_tie_gpt4",
+            ]
+        )
+
+    human = human_df.merge(
+        catalog[["item_id", "category", "category_label"]], on="item_id", how="left"
+    )
+    gpt4 = gpt4_df.merge(
+        catalog[["item_id", "category", "category_label"]], on="item_id", how="left"
+    )
+    human_cat = (
+        human.groupby(["category", "category_label"], as_index=False)
+        .agg(tie_rate_human=("winner", lambda s: _tie_mask(s).mean()))
+        .assign(pct_tie_human=lambda d: d["tie_rate_human"] * 100)
+    )
+    gpt4_cat = (
+        gpt4.groupby(["category", "category_label"], as_index=False)
+        .agg(tie_rate_gpt4=("winner", lambda s: _tie_mask(s).mean()))
+        .assign(pct_tie_gpt4=lambda d: d["tie_rate_gpt4"] * 100)
+    )
+    by_category = human_cat.merge(
+        gpt4_cat, on=["category", "category_label"], how="inner"
+    )
+    by_category["tie_rate_gap"] = (
+        by_category["tie_rate_human"] - by_category["tie_rate_gpt4"]
+    )
+    return overall, by_category.sort_values("tie_rate_gap").reset_index(drop=True)

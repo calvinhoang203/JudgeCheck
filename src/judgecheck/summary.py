@@ -30,6 +30,7 @@ def write_text_summary(
     winner_agreement_rate: float | None = None,
     winner_agreement_by_category: pd.DataFrame | None = None,
     category_discrimination_comparison: pd.DataFrame | None = None,
+    tie_rates: pd.DataFrame | None = None,
     recommended_pairwise_items: pd.DataFrame | None = None,
     human_peak_theta: float | None = None,
     recommended_items: pd.DataFrame | None = None,
@@ -103,6 +104,16 @@ def write_text_summary(
                 f"({high['discrimination_gap']:.2f})"
             )
             lines.append("  See category_discrimination_comparison.csv.")
+        if tie_rates is not None and not tie_rates.empty:
+            human_tie = tie_rates.loc[
+                tie_rates["judge_system"] == "human_experts", "pct_tie"
+            ].iloc[0]
+            gpt4_tie = tie_rates.loc[
+                tie_rates["judge_system"] == "gpt4_judge", "pct_tie"
+            ].iloc[0]
+            lines.append(f"  Human tie rate: {human_tie:.1f}%")
+            lines.append(f"  GPT-4 tie rate: {gpt4_tie:.1f}%")
+            lines.append("  See pairwise_tie_rates_by_category.csv.")
         if (
             recommended_pairwise_items is not None
             and not recommended_pairwise_items.empty

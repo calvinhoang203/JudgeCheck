@@ -228,6 +228,47 @@ def plot_category_discrimination_comparison(
     return fig
 
 
+def plot_category_tie_rates(
+    tie_by_category: pd.DataFrame,
+    *,
+    save_path: str | Path | None = None,
+) -> plt.Figure:
+    """Grouped bar chart: human vs GPT-4 tie rates by category."""
+    ordered = tie_by_category.sort_values("category_label").reset_index(drop=True)
+    x = np.arange(len(ordered))
+    width = 0.36
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.bar(
+        x - width / 2,
+        ordered["pct_tie_human"],
+        width,
+        label="Human experts",
+        color="#2E86AB",
+    )
+    ax.bar(
+        x + width / 2,
+        ordered["pct_tie_gpt4"],
+        width,
+        label="GPT-4 pairwise",
+        color="#A23B72",
+    )
+    ax.set_xticks(x)
+    ax.set_xticklabels(ordered["category_label"], rotation=30, ha="right")
+    ax.set_xlabel("Question category")
+    ax.set_ylabel("Tie rate (%)")
+    ax.set_title("Human vs GPT-4 tie rates by category")
+    ax.legend(frameon=False)
+    fig.tight_layout()
+
+    if save_path:
+        path = Path(save_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(path, dpi=150, bbox_inches="tight")
+
+    return fig
+
+
 def plot_test_information(
     information: pd.DataFrame,
     *,

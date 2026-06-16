@@ -63,6 +63,7 @@ data/               cached gpt4_single.jsonl (gitignored)
 | `recommended_items_overlap_detail.csv` | Pairwise vs score recommended-set overlap (full run) |
 | `weak_benchmark_items.csv` | Low discrimination (pairwise) |
 | `pairwise_winner_agreement.csv` | Human vs GPT-4 winner agreement |
+| `pairwise_tie_rates_by_category.csv` | Human vs GPT-4 tie rates by category |
 | `pairwise_agreement_by_category.csv` | Winner agreement by MT-Bench category |
 | `category_discrimination_comparison.csv` | Human vs GPT-4 discrimination by category |
 

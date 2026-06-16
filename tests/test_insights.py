@@ -8,6 +8,7 @@ import pandas as pd
 
 from judgecheck.insights import (
     compare_recommended_sets,
+    pairwise_tie_rates,
     pairwise_agreement_by_category,
     pairwise_winner_agreement,
     select_weak_items,
@@ -75,6 +76,31 @@ class TestInsights(unittest.TestCase):
         self.assertAlmostEqual(summary.loc[0, "jaccard"], 0.5)
         self.assertEqual(len(detail), 4)
         self.assertEqual(len(detail[detail["overlap_group"] == "both"]), 2)
+
+    def test_pairwise_tie_rates(self) -> None:
+        human = pd.DataFrame(
+            [
+                {"item_id": "1_t1", "winner": "tie"},
+                {"item_id": "1_t1", "winner": "model_a"},
+                {"item_id": "2_t1", "winner": "tie (inconsistent)"},
+            ]
+        )
+        gpt4 = pd.DataFrame(
+            [
+                {"item_id": "1_t1", "winner": "model_a"},
+                {"item_id": "2_t1", "winner": "tie"},
+            ]
+        )
+        catalog = pd.DataFrame(
+            [
+                {"item_id": "1_t1", "category": "math", "category_label": "Math"},
+                {"item_id": "2_t1", "category": "writing", "category_label": "Writing"},
+            ]
+        )
+        overall, by_cat = pairwise_tie_rates(human, gpt4, catalog=catalog)
+        human_row = overall.loc[overall["judge_system"] == "human_experts"].iloc[0]
+        self.assertAlmostEqual(human_row["tie_rate"], 2 / 3)
+        self.assertEqual(len(by_cat), 2)
 
     def test_pairwise_agreement_by_category_empty_catalog(self) -> None:
         merged = pd.DataFrame(

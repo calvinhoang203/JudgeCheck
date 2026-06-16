@@ -3,6 +3,14 @@
 All notable JudgeCheck updates are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.9] — 2026-05-30
+
+### Added
+- **Tie rate comparison** — human vs GPT-4 indecisive judgment rates (`pairwise_tie_rates.csv`, `pairwise_tie_rates_by_category.csv`, plot)
+
+### Fixed
+- **`_finalize_outputs`** — pairwise benchmark designer stats no longer wiped before writing `SUMMARY.txt`; removed duplicate keyword argument
+
 ## [0.3.8] — 2026-05-30
 
 ### Added

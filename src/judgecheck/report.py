@@ -120,6 +120,8 @@ def generate_html_report(
     winner_agreement_rate: float | None = None,
     winner_agreement_by_category: pd.DataFrame | None = None,
     category_discrimination_comparison: pd.DataFrame | None = None,
+    tie_rates: pd.DataFrame | None = None,
+    tie_rates_by_category: pd.DataFrame | None = None,
     recommended_pairwise_items: pd.DataFrame | None = None,
     human_peak_theta: float | None = None,
     recommended_overlap_summary: pd.DataFrame | None = None,
@@ -168,6 +170,30 @@ def generate_html_report(
     )}
     <img src="category_discrimination_comparison.png" alt="Category discrimination comparison">
     <p class="note">Full table: category_discrimination_comparison.csv</p>
+  </div>
+"""
+
+    tie_block = ""
+    if tie_rates is not None and not tie_rates.empty:
+        human_tie = tie_rates.loc[
+            tie_rates["judge_system"] == "human_experts", "pct_tie"
+        ].iloc[0]
+        gpt4_tie = tie_rates.loc[
+            tie_rates["judge_system"] == "gpt4_judge", "pct_tie"
+        ].iloc[0]
+        tie_block = f"""
+  <div class="card">
+    <h2>Tie rates (indecisive judgments)</h2>
+    <div class="metric">
+      <span>Human tie rate</span>
+      <strong>{human_tie:.1f}%</strong>
+    </div>
+    <div class="metric">
+      <span>GPT-4 tie rate</span>
+      <strong>{gpt4_tie:.1f}%</strong>
+    </div>
+    {"<img src='pairwise_tie_rates_by_category.png' alt='Tie rates by category'>" if tie_rates_by_category is not None and not tie_rates_by_category.empty else ""}
+    {"<p class='note'>By category: pairwise_tie_rates_by_category.csv</p>" if tie_rates_by_category is not None and not tie_rates_by_category.empty else "<p class='note'>See pairwise_tie_rates.csv</p>"}
   </div>
 """
 
@@ -315,6 +341,8 @@ def generate_html_report(
   {category_agreement_block}
 
   {category_discrimination_block}
+
+  {tie_block}
 
   {overlap_block}
 

@@ -34,6 +34,7 @@ from judgecheck.grm import (
 )
 from judgecheck.insights import (
     compare_recommended_sets,
+    pairwise_tie_rates,
     pairwise_winner_agreement,
     select_weak_items,
 )
@@ -43,6 +44,7 @@ from judgecheck.summary import model_score_ranking, print_console_summary, write
 from judgecheck.viz import (
     plot_category_discrimination,
     plot_category_discrimination_comparison,
+    plot_category_tie_rates,
     plot_discrimination_comparison,
     plot_item_discrimination,
     plot_judge_abilities,
@@ -69,6 +71,8 @@ class PairwiseOutputs:
     human_information: pd.DataFrame | None = None
     human_item_contributions: pd.DataFrame | None = None
     recommended_pairwise_items: pd.DataFrame | None = None
+    tie_rates: pd.DataFrame | None = None
+    tie_rates_by_category: pd.DataFrame | None = None
 
 
 @dataclass
@@ -135,6 +139,7 @@ def run_pairwise_analysis(
         human_df, gpt4_df, catalog=catalog
     )
     agree_by_item = enrich_with_labels(agree_by_item, catalog)
+    tie_overall, tie_by_category = pairwise_tie_rates(human_df, gpt4_df, catalog=catalog)
 
     human_params.to_csv(output_dir / "human_item_parameters.csv", index=False)
     gpt4_params.to_csv(output_dir / "gpt4_item_parameters.csv", index=False)
@@ -148,6 +153,8 @@ def run_pairwise_analysis(
     agree_by_category.to_csv(
         output_dir / "pairwise_agreement_by_category.csv", index=False
     )
+    tie_overall.to_csv(output_dir / "pairwise_tie_rates.csv", index=False)
+    tie_by_category.to_csv(output_dir / "pairwise_tie_rates_by_category.csv", index=False)
     category_comparison.to_csv(
         output_dir / "category_discrimination_comparison.csv", index=False
     )
@@ -192,6 +199,11 @@ def run_pairwise_analysis(
         human_information,
         save_path=output_dir / "human_test_information.png",
     )
+    if not tie_by_category.empty:
+        plot_category_tie_rates(
+            tie_by_category,
+            save_path=output_dir / "pairwise_tie_rates_by_category.png",
+        )
 
     generate_html_report(
         human_results=human_results,
@@ -210,6 +222,8 @@ def run_pairwise_analysis(
         ),
         winner_agreement_by_category=agree_by_category,
         category_discrimination_comparison=category_comparison,
+        tie_rates=tie_overall,
+        tie_rates_by_category=tie_by_category,
         recommended_pairwise_items=recommended_pairwise,
         human_peak_theta=float(
             human_information.loc[human_information["test_information"].idxmax(), "theta"]
@@ -234,6 +248,8 @@ def run_pairwise_analysis(
         human_information=human_information,
         human_item_contributions=human_contributions,
         recommended_pairwise_items=recommended_pairwise,
+        tie_rates=tie_overall,
+        tie_rates_by_category=tie_by_category,
     )
 
 
@@ -343,6 +359,7 @@ def _finalize_outputs(
     agree_rate = None
     agree_by_category = None
     category_disc_comparison = None
+    tie_rates = None
     human_peak_theta = None
     recommended_pairwise = None
     comparison = None
@@ -358,6 +375,7 @@ def _finalize_outputs(
             agree_rate = float(pairwise.winner_agreement["agreement_rate"].iloc[0])
         agree_by_category = pairwise.winner_agreement_by_category
         category_disc_comparison = pairwise.category_discrimination_comparison
+        tie_rates = pairwise.tie_rates
         if pairwise.human_information is not None and not pairwise.human_information.empty:
             peak_idx = pairwise.human_information["test_information"].idxmax()
             human_peak_theta = float(pairwise.human_information.loc[peak_idx, "theta"])
@@ -365,8 +383,6 @@ def _finalize_outputs(
 
     peak_theta = None
     recommended = None
-    recommended_pairwise = None
-    human_peak_theta = None
     ranking = None
     if scores is not None:
         peak_idx = scores.information["test_information"].idxmax()
@@ -382,13 +398,13 @@ def _finalize_outputs(
         winner_agreement_rate=agree_rate,
         winner_agreement_by_category=agree_by_category,
         category_discrimination_comparison=category_disc_comparison,
+        tie_rates=tie_rates,
         recommended_pairwise_items=recommended_pairwise,
         human_peak_theta=human_peak_theta,
         recommended_items=recommended,
         model_ranking=ranking,
         peak_theta=peak_theta,
         coverage_target=config.coverage,
-        recommended_overlap_summary=recommended_overlap_summary,
         recommended_overlap_summary=recommended_overlap_summary,
     )
     print_console_summary(
@@ -462,6 +478,8 @@ def run_full_analysis(
         ),
         winner_agreement_by_category=pairwise.winner_agreement_by_category,
         category_discrimination_comparison=pairwise.category_discrimination_comparison,
+        tie_rates=pairwise.tie_rates,
+        tie_rates_by_category=pairwise.tie_rates_by_category,
         recommended_pairwise_items=pairwise.recommended_pairwise_items,
         human_peak_theta=(
             float(

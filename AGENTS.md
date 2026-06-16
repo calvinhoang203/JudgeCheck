@@ -66,6 +66,7 @@ src/judgecheck/
 | `recommended_items_overlap_*.csv` | `insights.compare_recommended_sets` (full run) |
 | `pairwise_winner_agreement.csv` | `insights.pairwise_winner_agreement` |
 | `pairwise_agreement_by_category.csv` | `insights.pairwise_agreement_by_category` |
+| `pairwise_tie_rates_by_category.csv` | `insights.pairwise_tie_rates` |
 | `category_discrimination_comparison.csv` | `grm.compare_category_discrimination` |
 | `weak_benchmark_items.csv` | `insights.select_weak_items` |
 

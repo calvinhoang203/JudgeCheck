@@ -24,6 +24,7 @@ Estimated for human annotators only. Higher θ = more decisive/consistent on the
 - **Mean discrimination** — overall sharpness of each judge system
 - **Spearman *r*** (in `judge_comparison.csv`) — correlation of item discriminations across questions
 - **Winner agreement** (in `pairwise_winner_agreement.csv`) — % same A/B winner on shared comparisons
+- **Tie rates** (in `pairwise_tie_rates.csv`) — how often each judge system calls a comparison a tie
 - **By category** (in `pairwise_agreement_by_category.csv`) — which topic areas humans and GPT-4 disagree most on winners
 - **Discrimination by category** (in `category_discrimination_comparison.csv`) — which topics each judge system finds sharpest; `discrimination_gap` = human − GPT-4
 
