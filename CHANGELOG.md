@@ -3,6 +3,12 @@
 All notable JudgeCheck updates are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.4.0] — 2026-05-30
+
+### Added
+- **Human judge reliability summary** — aggregate θ stats (`human_judge_summary.csv`)
+- **Judge workload** — `n_judgments` and `n_items` columns on `human_judge_abilities.csv`
+
 ## [0.3.9] — 2026-05-30
 
 ### Added

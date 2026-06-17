@@ -34,9 +34,11 @@ from judgecheck.grm import (
 )
 from judgecheck.insights import (
     compare_recommended_sets,
+    enrich_judge_abilities,
     pairwise_tie_rates,
     pairwise_winner_agreement,
     select_weak_items,
+    summarize_judge_abilities,
 )
 from judgecheck.pdf_report import generate_pdf_report
 from judgecheck.report import generate_html_report
@@ -60,6 +62,7 @@ class PairwiseOutputs:
     human_params: pd.DataFrame
     gpt4_params: pd.DataFrame
     judge_params: pd.DataFrame
+    judge_summary: pd.DataFrame
     comparison: pd.DataFrame
     human_categories: pd.DataFrame
     gpt4_categories: pd.DataFrame
@@ -121,7 +124,10 @@ def run_pairwise_analysis(
 
     human_params = enrich_with_labels(grm_results_to_frame(human_results), catalog)
     gpt4_params = enrich_with_labels(grm_results_to_frame(gpt4_results), catalog)
-    judge_params = judge_abilities_to_frame(human_results)
+    judge_params = enrich_judge_abilities(
+        judge_abilities_to_frame(human_results), human_df
+    )
+    judge_summary = summarize_judge_abilities(judge_params)
     comparison = compare_judges(human_results, gpt4_results)
     human_categories = summarize_by_category(human_params)
     gpt4_categories = summarize_by_category(gpt4_params)
@@ -144,6 +150,7 @@ def run_pairwise_analysis(
     human_params.to_csv(output_dir / "human_item_parameters.csv", index=False)
     gpt4_params.to_csv(output_dir / "gpt4_item_parameters.csv", index=False)
     judge_params.to_csv(output_dir / "human_judge_abilities.csv", index=False)
+    judge_summary.to_csv(output_dir / "human_judge_summary.csv", index=False)
     comparison.to_csv(output_dir / "judge_comparison.csv", index=False)
     human_categories.to_csv(output_dir / "human_category_summary.csv", index=False)
     gpt4_categories.to_csv(output_dir / "gpt4_category_summary.csv", index=False)
@@ -211,6 +218,7 @@ def run_pairwise_analysis(
         human_items=human_params,
         gpt4_items=gpt4_params,
         human_judges=judge_params,
+        judge_summary=judge_summary,
         human_categories=human_categories,
         gpt4_categories=gpt4_categories,
         comparison=comparison,
@@ -237,6 +245,7 @@ def run_pairwise_analysis(
         human_params=human_params,
         gpt4_params=gpt4_params,
         judge_params=judge_params,
+        judge_summary=judge_summary,
         comparison=comparison,
         human_categories=human_categories,
         gpt4_categories=gpt4_categories,
@@ -360,6 +369,7 @@ def _finalize_outputs(
     agree_by_category = None
     category_disc_comparison = None
     tie_rates = None
+    judge_summary = None
     human_peak_theta = None
     recommended_pairwise = None
     comparison = None
@@ -376,6 +386,7 @@ def _finalize_outputs(
         agree_by_category = pairwise.winner_agreement_by_category
         category_disc_comparison = pairwise.category_discrimination_comparison
         tie_rates = pairwise.tie_rates
+        judge_summary = pairwise.judge_summary
         if pairwise.human_information is not None and not pairwise.human_information.empty:
             peak_idx = pairwise.human_information["test_information"].idxmax()
             human_peak_theta = float(pairwise.human_information.loc[peak_idx, "theta"])
@@ -399,6 +410,7 @@ def _finalize_outputs(
         winner_agreement_by_category=agree_by_category,
         category_discrimination_comparison=category_disc_comparison,
         tie_rates=tie_rates,
+        judge_summary=judge_summary,
         recommended_pairwise_items=recommended_pairwise,
         human_peak_theta=human_peak_theta,
         recommended_items=recommended,
@@ -466,6 +478,7 @@ def run_full_analysis(
         human_items=pairwise.human_params,
         gpt4_items=pairwise.gpt4_params,
         human_judges=pairwise.judge_params,
+        judge_summary=pairwise.judge_summary,
         human_categories=pairwise.human_categories,
         gpt4_categories=pairwise.gpt4_categories,
         comparison=pairwise.comparison,

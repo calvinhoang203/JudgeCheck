@@ -31,6 +31,7 @@ def write_text_summary(
     winner_agreement_by_category: pd.DataFrame | None = None,
     category_discrimination_comparison: pd.DataFrame | None = None,
     tie_rates: pd.DataFrame | None = None,
+    judge_summary: pd.DataFrame | None = None,
     recommended_pairwise_items: pd.DataFrame | None = None,
     human_peak_theta: float | None = None,
     recommended_items: pd.DataFrame | None = None,
@@ -114,6 +115,19 @@ def write_text_summary(
             lines.append(f"  Human tie rate: {human_tie:.1f}%")
             lines.append(f"  GPT-4 tie rate: {gpt4_tie:.1f}%")
             lines.append("  See pairwise_tie_rates_by_category.csv.")
+        if judge_summary is not None and not judge_summary.empty:
+            row = judge_summary.iloc[0]
+            lines.extend(
+                [
+                    "HUMAN JUDGE RELIABILITY",
+                    f"  {int(row['n_judges'])} annotators; mean θ = {row['mean_theta']:.2f} "
+                    f"(SD {row['sd_theta']:.2f})",
+                    f"  Most decisive: {row['most_decisive_judge']} "
+                    f"(θ = {row['most_decisive_theta']:.2f})",
+                    "  See human_judge_abilities.csv (includes workload).",
+                    "",
+                ]
+            )
         if (
             recommended_pairwise_items is not None
             and not recommended_pairwise_items.empty

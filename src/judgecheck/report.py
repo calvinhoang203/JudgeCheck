@@ -112,6 +112,7 @@ def generate_html_report(
     human_items: pd.DataFrame,
     gpt4_items: pd.DataFrame,
     human_judges: pd.DataFrame | None,
+    judge_summary: pd.DataFrame | None = None,
     human_categories: pd.DataFrame,
     gpt4_categories: pd.DataFrame,
     comparison: pd.DataFrame,
@@ -325,7 +326,11 @@ def generate_html_report(
     <p class="note">Low discrimination — see weak_benchmark_items.csv</p>
   </div>
 
-  {"<div class='card'><h2>Human judge ability (θ)</h2>" + _table_html(human_judges.head(10), ["judge_id", "ability_theta", "ability_rank"]) + "<img src='human_judge_abilities.png' alt='Judge abilities'></div>" if human_judges is not None else ""}
+  {"<div class='card'><h2>Human judge ability (θ)</h2>" + (
+        "<div class='metric'><span>Mean θ</span><strong>" + f"{judge_summary.iloc[0]['mean_theta']:.2f}" + "</strong></div>"
+        + "<div class='metric'><span>SD θ</span><strong>" + f"{judge_summary.iloc[0]['sd_theta']:.2f}" + "</strong></div>"
+        if judge_summary is not None and not judge_summary.empty else ""
+    ) + _table_html(human_judges.head(10), [c for c in ["judge_id", "ability_theta", "ability_rank", "n_judgments"] if c in human_judges.columns]) + "<img src='human_judge_abilities.png' alt='Judge abilities'></div>" if human_judges is not None else ""}
 
   <div class="card">
     <h2>By category</h2>

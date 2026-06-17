@@ -8,10 +8,12 @@ import pandas as pd
 
 from judgecheck.insights import (
     compare_recommended_sets,
+    enrich_judge_abilities,
     pairwise_tie_rates,
     pairwise_agreement_by_category,
     pairwise_winner_agreement,
     select_weak_items,
+    summarize_judge_abilities,
 )
 
 
@@ -101,6 +103,33 @@ class TestInsights(unittest.TestCase):
         human_row = overall.loc[overall["judge_system"] == "human_experts"].iloc[0]
         self.assertAlmostEqual(human_row["tie_rate"], 2 / 3)
         self.assertEqual(len(by_cat), 2)
+
+    def test_summarize_judge_abilities(self) -> None:
+        judges = pd.DataFrame(
+            {
+                "judge_id": ["j1", "j2", "j3"],
+                "ability_theta": [1.0, 0.0, -1.0],
+                "ability_rank": [1, 2, 3],
+            }
+        )
+        summary = summarize_judge_abilities(judges)
+        self.assertEqual(summary.loc[0, "n_judges"], 3)
+        self.assertAlmostEqual(summary.loc[0, "mean_theta"], 0.0)
+        self.assertEqual(summary.loc[0, "most_decisive_judge"], "j1")
+
+    def test_enrich_judge_abilities(self) -> None:
+        judges = pd.DataFrame(
+            {"judge_id": ["j1"], "ability_theta": [0.5], "ability_rank": [1]}
+        )
+        human = pd.DataFrame(
+            [
+                {"judge": "j1", "item_id": "1_t1"},
+                {"judge": "j1", "item_id": "2_t1"},
+            ]
+        )
+        enriched = enrich_judge_abilities(judges, human)
+        self.assertEqual(enriched.loc[0, "n_judgments"], 2)
+        self.assertEqual(enriched.loc[0, "n_items"], 2)
 
     def test_pairwise_agreement_by_category_empty_catalog(self) -> None:
         merged = pd.DataFrame(

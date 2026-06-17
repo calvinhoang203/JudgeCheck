@@ -258,3 +258,44 @@ def pairwise_tie_rates(
         by_category["tie_rate_human"] - by_category["tie_rate_gpt4"]
     )
     return overall, by_category.sort_values("tie_rate_gap").reset_index(drop=True)
+
+
+def judge_workload(human_df: pd.DataFrame) -> pd.DataFrame:
+    """Count judgments and unique items per human annotator."""
+    return (
+        human_df.groupby("judge", as_index=False)
+        .agg(n_judgments=("item_id", "size"), n_items=("item_id", "nunique"))
+        .rename(columns={"judge": "judge_id"})
+        .sort_values("n_judgments", ascending=False)
+        .reset_index(drop=True)
+    )
+
+
+def enrich_judge_abilities(
+    judge_params: pd.DataFrame,
+    human_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Attach workload counts to the ranked judge ability table."""
+    return judge_params.merge(judge_workload(human_df), on="judge_id", how="left")
+
+
+def summarize_judge_abilities(judge_params: pd.DataFrame) -> pd.DataFrame:
+    """One-row summary of human annotator θ estimates."""
+    theta = judge_params["ability_theta"]
+    top = judge_params.iloc[0]
+    bottom = judge_params.iloc[-1]
+    return pd.DataFrame(
+        [
+            {
+                "n_judges": len(judge_params),
+                "mean_theta": float(theta.mean()),
+                "sd_theta": float(theta.std(ddof=0)),
+                "min_theta": float(theta.min()),
+                "max_theta": float(theta.max()),
+                "most_decisive_judge": top["judge_id"],
+                "most_decisive_theta": float(top["ability_theta"]),
+                "least_decisive_judge": bottom["judge_id"],
+                "least_decisive_theta": float(bottom["ability_theta"]),
+            }
+        ]
+    )

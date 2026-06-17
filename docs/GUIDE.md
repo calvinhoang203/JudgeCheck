@@ -17,7 +17,7 @@ Then open `outputs/SUMMARY.txt`, `outputs/report.html`, or `outputs/report.pdf`.
 
 ## Judge ability (θ)
 
-Estimated for human annotators only. Higher θ = more decisive/consistent on the latent scale (not “correctness” vs ground truth).
+Estimated for human annotators only. Higher θ = more decisive/consistent on the latent scale (not “correctness” vs ground truth). `human_judge_summary.csv` gives mean/SD; `human_judge_abilities.csv` includes per-judge workload (`n_judgments`).
 
 ## Human vs GPT-4
 

@@ -69,6 +69,7 @@ src/judgecheck/
 | `pairwise_tie_rates_by_category.csv` | `insights.pairwise_tie_rates` |
 | `category_discrimination_comparison.csv` | `grm.compare_category_discrimination` |
 | `weak_benchmark_items.csv` | `insights.select_weak_items` |
+| `human_judge_summary.csv` | `insights.summarize_judge_abilities` |
 
 ## Version
 

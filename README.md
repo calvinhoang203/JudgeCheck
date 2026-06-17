@@ -56,7 +56,8 @@ data/               cached gpt4_single.jsonl (gitignored)
 | `report.html` | HTML report with figures |
 | `report.pdf` | PDF summary + figures (shareable) |
 | `human_item_parameters.csv` | Item discrimination (human pairwise) |
-| `human_judge_abilities.csv` | Annotator θ estimates |
+| `human_judge_abilities.csv` | Annotator θ estimates + workload |
+| `human_judge_summary.csv` | Aggregate human judge θ statistics |
 | `score_item_parameters.csv` | Item discrimination (1–10 scores) |
 | `recommended_benchmark_items.csv` | High-information question subset (score track) |
 | `recommended_pairwise_items.csv` | High-information question subset (human pairwise) |
