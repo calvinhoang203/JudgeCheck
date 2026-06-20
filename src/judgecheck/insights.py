@@ -299,3 +299,81 @@ def summarize_judge_abilities(judge_params: pd.DataFrame) -> pd.DataFrame:
             }
         ]
     )
+
+
+def item_discrimination_agreement(
+    human_params: pd.DataFrame,
+    gpt4_params: pd.DataFrame,
+    *,
+    top_pct: float = 0.25,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Flag items both judge systems rate as sharp (top ``top_pct`` discrimination).
+
+    Uses separate quantile cutoffs per system because discrimination scales differ.
+    """
+    human = human_params.set_index("item_id")[["discrimination"]].rename(
+        columns={"discrimination": "discrimination_human"}
+    )
+    gpt4 = gpt4_params.set_index("item_id")[["discrimination"]].rename(
+        columns={"discrimination": "discrimination_gpt4"}
+    )
+    merged = human.join(gpt4, how="inner").reset_index()
+
+    label_cols = ["short_label", "category_label"]
+    for col in label_cols:
+        if col in human_params.columns:
+            labels = human_params.set_index("item_id")[col]
+            merged[col] = merged["item_id"].map(labels)
+
+    h_cut = merged["discrimination_human"].quantile(1 - top_pct)
+    g_cut = merged["discrimination_gpt4"].quantile(1 - top_pct)
+    merged["human_sharp"] = merged["discrimination_human"] >= h_cut
+    merged["gpt4_sharp"] = merged["discrimination_gpt4"] >= g_cut
+
+    def _group(row: pd.Series) -> str:
+        if row["human_sharp"] and row["gpt4_sharp"]:
+            return "both_sharp"
+        if row["human_sharp"]:
+            return "human_sharp_only"
+        if row["gpt4_sharp"]:
+            return "gpt4_sharp_only"
+        return "neither_sharp"
+
+    merged["sharp_group"] = merged.apply(_group, axis=1)
+
+    human_sharp = set(merged.loc[merged["human_sharp"], "item_id"])
+    gpt4_sharp = set(merged.loc[merged["gpt4_sharp"], "item_id"])
+    both = human_sharp & gpt4_sharp
+    union = human_sharp | gpt4_sharp
+
+    summary = pd.DataFrame(
+        [
+            {
+                "n_items": len(merged),
+                "top_pct": top_pct * 100,
+                "n_both_sharp": len(both),
+                "n_human_sharp_only": len(human_sharp - gpt4_sharp),
+                "n_gpt4_sharp_only": len(gpt4_sharp - human_sharp),
+                "n_neither_sharp": int((merged["sharp_group"] == "neither_sharp").sum()),
+                "sharp_jaccard": len(both) / len(union) if union else 0.0,
+                "pct_both_of_human_sharp": (
+                    len(both) / len(human_sharp) * 100 if human_sharp else 0.0
+                ),
+            }
+        ]
+    )
+
+    order = {
+        "both_sharp": 0,
+        "human_sharp_only": 1,
+        "gpt4_sharp_only": 2,
+        "neither_sharp": 3,
+    }
+    merged["_sort"] = merged["sharp_group"].map(order)
+    detail = (
+        merged.sort_values(["_sort", "discrimination_human"], ascending=[True, False])
+        .drop(columns="_sort")
+        .reset_index(drop=True)
+    )
+    return summary, detail

@@ -3,6 +3,12 @@
 All notable JudgeCheck updates are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.4.1] — 2026-05-30
+
+### Added
+- **Sharp item agreement** — items in the top discrimination tier for both human and GPT-4 (`item_discrimination_agreement_*.csv`)
+- **`--sharp-pct`** CLI flag (default 0.25) for the sharp-item cutoff
+
 ## [0.4.0] — 2026-05-30
 
 ### Added

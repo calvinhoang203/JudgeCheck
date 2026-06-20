@@ -65,6 +65,7 @@ data/               cached gpt4_single.jsonl (gitignored)
 | `weak_benchmark_items.csv` | Low discrimination (pairwise) |
 | `pairwise_winner_agreement.csv` | Human vs GPT-4 winner agreement |
 | `pairwise_tie_rates_by_category.csv` | Human vs GPT-4 tie rates by category |
+| `item_discrimination_agreement_detail.csv` | Sharp-item flags (human vs GPT-4 top tier) |
 | `pairwise_agreement_by_category.csv` | Winner agreement by MT-Bench category |
 | `category_discrimination_comparison.csv` | Human vs GPT-4 discrimination by category |
 

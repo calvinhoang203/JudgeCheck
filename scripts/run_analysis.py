@@ -62,9 +62,19 @@ def main() -> None:
         action="store_true",
         help="Skip report.pdf export",
     )
+    parser.add_argument(
+        "--sharp-pct",
+        type=float,
+        default=0.25,
+        help="Top fraction flagged as sharp items for human vs GPT-4 agreement (default: 0.25)",
+    )
     args = parser.parse_args()
 
-    config = AnalysisConfig(coverage=args.coverage, export_pdf=not args.no_pdf)
+    config = AnalysisConfig(
+        coverage=args.coverage,
+        export_pdf=not args.no_pdf,
+        sharp_item_pct=args.sharp_pct,
+    )
 
     print("=" * 60)
     print(f"JudgeCheck v{__version__} — MT-Bench IRT analysis")

@@ -32,6 +32,7 @@ def write_text_summary(
     category_discrimination_comparison: pd.DataFrame | None = None,
     tie_rates: pd.DataFrame | None = None,
     judge_summary: pd.DataFrame | None = None,
+    item_disc_agreement_summary: pd.DataFrame | None = None,
     recommended_pairwise_items: pd.DataFrame | None = None,
     human_peak_theta: float | None = None,
     recommended_items: pd.DataFrame | None = None,
@@ -125,6 +126,17 @@ def write_text_summary(
                     f"  Most decisive: {row['most_decisive_judge']} "
                     f"(θ = {row['most_decisive_theta']:.2f})",
                     "  See human_judge_abilities.csv (includes workload).",
+                    "",
+                ]
+            )
+        if item_disc_agreement_summary is not None and not item_disc_agreement_summary.empty:
+            row = item_disc_agreement_summary.iloc[0]
+            lines.extend(
+                [
+                    "SHARP ITEM AGREEMENT",
+                    f"  Top {row['top_pct']:.0f}%: {int(row['n_both_sharp'])} items sharp for both judges",
+                    f"  Sharp-set Jaccard: {row['sharp_jaccard']:.2f}",
+                    "  See item_discrimination_agreement_detail.csv",
                     "",
                 ]
             )

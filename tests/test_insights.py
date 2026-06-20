@@ -9,6 +9,7 @@ import pandas as pd
 from judgecheck.insights import (
     compare_recommended_sets,
     enrich_judge_abilities,
+    item_discrimination_agreement,
     pairwise_tie_rates,
     pairwise_agreement_by_category,
     pairwise_winner_agreement,
@@ -130,6 +131,24 @@ class TestInsights(unittest.TestCase):
         enriched = enrich_judge_abilities(judges, human)
         self.assertEqual(enriched.loc[0, "n_judgments"], 2)
         self.assertEqual(enriched.loc[0, "n_items"], 2)
+
+    def test_item_discrimination_agreement(self) -> None:
+        human = pd.DataFrame(
+            {
+                "item_id": ["a", "b", "c", "d"],
+                "discrimination": [1.0, 0.8, 0.3, 0.1],
+            }
+        )
+        gpt4 = pd.DataFrame(
+            {
+                "item_id": ["a", "b", "c", "d"],
+                "discrimination": [3.0, 2.5, 1.0, 0.5],
+            }
+        )
+        summary, detail = item_discrimination_agreement(human, gpt4, top_pct=0.25)
+        self.assertEqual(summary.loc[0, "n_items"], 4)
+        self.assertGreaterEqual(summary.loc[0, "n_both_sharp"], 1)
+        self.assertIn("sharp_group", detail.columns)
 
     def test_pairwise_agreement_by_category_empty_catalog(self) -> None:
         merged = pd.DataFrame(

@@ -123,6 +123,8 @@ def generate_html_report(
     category_discrimination_comparison: pd.DataFrame | None = None,
     tie_rates: pd.DataFrame | None = None,
     tie_rates_by_category: pd.DataFrame | None = None,
+    item_disc_agreement_summary: pd.DataFrame | None = None,
+    item_disc_agreement_detail: pd.DataFrame | None = None,
     recommended_pairwise_items: pd.DataFrame | None = None,
     human_peak_theta: float | None = None,
     recommended_overlap_summary: pd.DataFrame | None = None,
@@ -195,6 +197,38 @@ def generate_html_report(
     </div>
     {"<img src='pairwise_tie_rates_by_category.png' alt='Tie rates by category'>" if tie_rates_by_category is not None and not tie_rates_by_category.empty else ""}
     {"<p class='note'>By category: pairwise_tie_rates_by_category.csv</p>" if tie_rates_by_category is not None and not tie_rates_by_category.empty else "<p class='note'>See pairwise_tie_rates.csv</p>"}
+  </div>
+"""
+
+    disc_agreement_block = ""
+    if item_disc_agreement_summary is not None and not item_disc_agreement_summary.empty:
+        row = item_disc_agreement_summary.iloc[0]
+        both_lines = ""
+        if item_disc_agreement_detail is not None and not item_disc_agreement_detail.empty:
+            both = item_disc_agreement_detail[
+                item_disc_agreement_detail["sharp_group"] == "both_sharp"
+            ]
+            both_lines = "".join(
+                f"<li>{escape(str(r.get('short_label', r['item_id'])))}</li>"
+                for _, r in both.head(5).iterrows()
+            )
+        disc_agreement_block = f"""
+  <div class="card">
+    <h2>Sharp items (top {row['top_pct']:.0f}% discrimination)</h2>
+    <div class="metric">
+      <span>Both human & GPT-4</span>
+      <strong>{int(row['n_both_sharp'])}</strong>
+    </div>
+    <div class="metric">
+      <span>Sharp-set Jaccard</span>
+      <strong>{row['sharp_jaccard']:.2f}</strong>
+    </div>
+    <p class="note">
+      Human-only sharp: {int(row['n_human_sharp_only'])};
+      GPT-4-only sharp: {int(row['n_gpt4_sharp_only'])}
+    </p>
+    {"<h3>Agreed sharp items</h3><ul>" + both_lines + "</ul>" if both_lines else ""}
+    <p class="note">Full table: item_discrimination_agreement_detail.csv</p>
   </div>
 """
 
@@ -342,6 +376,8 @@ def generate_html_report(
     <h2>Discrimination scatter (human vs GPT-4)</h2>
     <img src="human_vs_gpt4_discrimination.png" alt="Human vs GPT-4 discrimination scatter">
   </div>
+
+  {disc_agreement_block}
 
   {category_agreement_block}
 
