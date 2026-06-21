@@ -204,7 +204,7 @@ def write_text_summary(
     lines.extend(
         [
             "FILES",
-            "  report.html, report.pdf, SUMMARY.txt",
+            "  report.html, report.pdf, SUMMARY.txt, metrics.json",
             "  docs/GUIDE.md — metric definitions",
             "  AGENTS.md — codebase notes for development",
             "",

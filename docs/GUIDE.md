@@ -6,7 +6,7 @@
 python scripts/run_analysis.py
 ```
 
-Then open `outputs/SUMMARY.txt`, `outputs/report.html`, or `outputs/report.pdf`.
+Then open `outputs/SUMMARY.txt`, `outputs/report.html`, `outputs/report.pdf`, or `outputs/metrics.json`.
 
 ## Discrimination (*a*)
 

@@ -3,6 +3,14 @@
 All notable JudgeCheck updates are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.4.2] — 2026-05-30
+
+### Added
+- **`metrics.json`** — machine-readable headline metrics (version, config, pairwise/scores blocks) for scripts and reproducibility
+
+### Fixed
+- **`_finalize_outputs`** — `scores-only` runs no longer crash on undefined `item_disc_summary`
+
 ## [0.4.1] — 2026-05-30
 
 ### Added

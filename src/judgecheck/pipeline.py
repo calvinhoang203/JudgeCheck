@@ -41,6 +41,7 @@ from judgecheck.insights import (
     select_weak_items,
     summarize_judge_abilities,
 )
+from judgecheck.metrics import build_metrics_manifest, write_metrics_json
 from judgecheck.pdf_report import generate_pdf_report
 from judgecheck.report import generate_html_report
 from judgecheck.summary import model_score_ranking, print_console_summary, write_text_summary
@@ -386,6 +387,7 @@ def _finalize_outputs(
     category_disc_comparison = None
     tie_rates = None
     judge_summary = None
+    item_disc_summary = None
     human_peak_theta = None
     recommended_pairwise = None
     comparison = None
@@ -445,6 +447,16 @@ def _finalize_outputs(
         winner_agreement_rate=agree_rate,
         recommended_overlap_summary=recommended_overlap_summary,
         coverage_target=config.coverage,
+    )
+
+    write_metrics_json(
+        output_dir,
+        build_metrics_manifest(
+            config=config,
+            pairwise=pairwise,
+            scores=scores,
+            recommended_overlap_summary=recommended_overlap_summary,
+        ),
     )
 
     if config.export_pdf:

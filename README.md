@@ -23,7 +23,7 @@ python scripts/run_analysis.py
 
 Options: `--pairwise-only`, `--scores-only`, `--coverage 0.9` (default 0.8), `--no-pdf`.
 
-Outputs: `outputs/SUMMARY.txt`, `outputs/report.html`, `outputs/report.pdf`, CSVs and PNGs.
+Outputs: `outputs/SUMMARY.txt`, `outputs/report.html`, `outputs/report.pdf`, `outputs/metrics.json`, CSVs and PNGs.
 
 Rebuild PDF only (no re-analysis):
 
@@ -55,6 +55,7 @@ data/               cached gpt4_single.jsonl (gitignored)
 | `SUMMARY.txt` | Text headline results |
 | `report.html` | HTML report with figures |
 | `report.pdf` | PDF summary + figures (shareable) |
+| `metrics.json` | Machine-readable headline metrics |
 | `human_item_parameters.csv` | Item discrimination (human pairwise) |
 | `human_judge_abilities.csv` | Annotator θ estimates + workload |
 | `human_judge_summary.csv` | Aggregate human judge θ statistics |

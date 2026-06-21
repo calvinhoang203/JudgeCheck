@@ -37,6 +37,7 @@ src/judgecheck/
   viz.py                    → matplotlib plots
   report.py                 → HTML report
   pdf_report.py             → PDF export (summary + figures)
+  metrics.py                → metrics.json manifest
 ```
 
 **Rule for new features:** implement in a module → call from `pipeline.py` → expose CLI flag if needed → update `CHANGELOG.md` and output table in `README.md`.
