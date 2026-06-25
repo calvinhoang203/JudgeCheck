@@ -42,7 +42,7 @@ Both tracks can recommend a minimal question set covering ~80% of diagnostic inf
 | Human pairwise | `recommended_pairwise_items.csv` |
 | GPT-4 scores | `recommended_benchmark_items.csv` |
 
-On a **full run**, compare overlap in `recommended_items_overlap_summary.csv` (Jaccard similarity, items in both sets).
+On a **full run**, compare overlap in `recommended_items_overlap_summary.csv` (Jaccard similarity, items in both sets) and topic mix in `recommended_category_comparison.csv`.
 
 ## Pairwise coding
 

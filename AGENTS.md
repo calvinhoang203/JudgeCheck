@@ -65,6 +65,7 @@ src/judgecheck/
 | `recommended_benchmark_items.csv` | `run_score_analysis` + `recommend_benchmark_items` |
 | `recommended_pairwise_items.csv` | `run_pairwise_analysis` + `recommend_benchmark_items` |
 | `recommended_items_overlap_*.csv` | `insights.compare_recommended_sets` (full run) |
+| `recommended_category_comparison.csv` | `insights.compare_recommended_categories` (full run) |
 | `pairwise_winner_agreement.csv` | `insights.pairwise_winner_agreement` |
 | `pairwise_agreement_by_category.csv` | `insights.pairwise_agreement_by_category` |
 | `pairwise_tie_rates_by_category.csv` | `insights.pairwise_tie_rates` |
@@ -88,6 +89,8 @@ $env:PYTHONPATH = "src"
 python -m unittest discover -s tests
 python scripts/run_analysis.py --pairwise-only   # integration smoke test (~minutes)
 ```
+
+CI: `.github/workflows/tests.yml` runs unit tests on push/PR to `main`.
 
 ## Citation
 

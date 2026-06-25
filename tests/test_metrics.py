@@ -7,6 +7,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+
 import pandas as pd
 
 from judgecheck.config import AnalysisConfig
@@ -38,7 +40,7 @@ class TestMetrics(unittest.TestCase):
             config=AnalysisConfig(),
             pairwise=Pairwise(),  # type: ignore[arg-type]
         )
-        self.assertEqual(manifest["version"], "0.4.2")
+        self.assertEqual(manifest["version"], "0.4.4")
         self.assertAlmostEqual(manifest["pairwise"]["human_mean_discrimination"], 0.75)
         self.assertAlmostEqual(manifest["pairwise"]["winner_agreement_rate"], 0.61)
 
@@ -47,6 +49,32 @@ class TestMetrics(unittest.TestCase):
             path = write_metrics_json(Path(tmp), {"version": "0.4.2", "pairwise": {}})
             data = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(data["version"], "0.4.2")
+
+    def test_compare_metrics_script(self) -> None:
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "compare_metrics",
+            ROOT / "scripts" / "compare_metrics.py",
+        )
+        assert spec and spec.loader
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            a = Path(tmp) / "a.json"
+            b = Path(tmp) / "b.json"
+            a.write_text(
+                json.dumps({"pairwise": {"winner_agreement_rate": 0.6}}),
+                encoding="utf-8",
+            )
+            b.write_text(
+                json.dumps({"pairwise": {"winner_agreement_rate": 0.7}}),
+                encoding="utf-8",
+            )
+            rows = mod.compare_metrics(a, b)
+            self.assertEqual(len(rows), 1)
+            self.assertIn("winner_agreement_rate", rows[0][0])
 
 
 if __name__ == "__main__":

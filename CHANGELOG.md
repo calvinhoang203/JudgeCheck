@@ -3,6 +3,17 @@
 All notable JudgeCheck updates are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.4.4] — 2026-05-30
+
+### Added
+- **`scripts/compare_metrics.py`** — diff two `metrics.json` files (e.g. different `--coverage` runs)
+
+## [0.4.3] — 2026-05-30
+
+### Added
+- **Recommended set category breakdown** — topic mix of benchmark designer picks (`recommended_*_by_category.csv`, `recommended_category_comparison.csv` on full runs)
+- **GitHub Actions** — unit tests on push/PR to `main`
+
 ## [0.4.2] — 2026-05-30
 
 ### Added

@@ -7,12 +7,14 @@ import unittest
 import pandas as pd
 
 from judgecheck.insights import (
+    compare_recommended_categories,
     compare_recommended_sets,
     enrich_judge_abilities,
     item_discrimination_agreement,
     pairwise_tie_rates,
     pairwise_agreement_by_category,
     pairwise_winner_agreement,
+    recommended_items_by_category,
     select_weak_items,
     summarize_judge_abilities,
 )
@@ -131,6 +133,38 @@ class TestInsights(unittest.TestCase):
         enriched = enrich_judge_abilities(judges, human)
         self.assertEqual(enriched.loc[0, "n_judgments"], 2)
         self.assertEqual(enriched.loc[0, "n_items"], 2)
+
+    def test_recommended_items_by_category(self) -> None:
+        rec = pd.DataFrame(
+            {
+                "item_id": ["1_t1", "2_t1", "3_t1"],
+                "category": ["math", "math", "writing"],
+                "category_label": ["Math", "Math", "Writing"],
+            }
+        )
+        counts = recommended_items_by_category(rec)
+        self.assertEqual(counts["n_items"].sum(), 3)
+        math = counts.loc[counts["category_label"] == "Math"].iloc[0]
+        self.assertEqual(math["n_items"], 2)
+
+    def test_compare_recommended_categories(self) -> None:
+        pw = pd.DataFrame(
+            {
+                "item_id": ["1_t1", "2_t1"],
+                "category": ["math", "writing"],
+                "category_label": ["Math", "Writing"],
+            }
+        )
+        sc = pd.DataFrame(
+            {
+                "item_id": ["1_t1", "3_t1"],
+                "category": ["math", "coding"],
+                "category_label": ["Math", "Coding"],
+            }
+        )
+        merged = compare_recommended_categories(pw, sc)
+        self.assertEqual(len(merged), 3)
+        self.assertEqual(merged.loc[merged["category_label"] == "Math", "n_pairwise"].iloc[0], 1)
 
     def test_item_discrimination_agreement(self) -> None:
         human = pd.DataFrame(

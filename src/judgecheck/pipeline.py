@@ -33,11 +33,13 @@ from judgecheck.grm import (
     test_information_curve,
 )
 from judgecheck.insights import (
+    compare_recommended_categories,
     compare_recommended_sets,
     enrich_judge_abilities,
     item_discrimination_agreement,
     pairwise_tie_rates,
     pairwise_winner_agreement,
+    recommended_items_by_category,
     select_weak_items,
     summarize_judge_abilities,
 )
@@ -183,6 +185,9 @@ def run_pairwise_analysis(
     recommended_pairwise.to_csv(
         output_dir / "recommended_pairwise_items.csv", index=False
     )
+    recommended_items_by_category(recommended_pairwise).to_csv(
+        output_dir / "recommended_pairwise_by_category.csv", index=False
+    )
 
     plot_item_discrimination(
         human_results,
@@ -321,6 +326,9 @@ def run_score_analysis(
     information.to_csv(output_dir / "score_test_information.csv", index=False)
     contributions.to_csv(output_dir / "score_item_information.csv", index=False)
     recommended.to_csv(output_dir / "recommended_benchmark_items.csv", index=False)
+    recommended_items_by_category(recommended).to_csv(
+        output_dir / "recommended_benchmark_by_category.csv", index=False
+    )
     weak_score.to_csv(output_dir / "weak_score_items.csv", index=False)
     ranking.to_csv(output_dir / "model_score_ranking.csv", index=False)
 
@@ -500,6 +508,9 @@ def run_full_analysis(
         )
         overlap_detail.to_csv(
             output_dir / "recommended_items_overlap_detail.csv", index=False
+        )
+        compare_recommended_categories(pw_rec, sc_rec).to_csv(
+            output_dir / "recommended_category_comparison.csv", index=False
         )
 
     generate_html_report(

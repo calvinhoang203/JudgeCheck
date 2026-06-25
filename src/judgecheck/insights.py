@@ -377,3 +377,43 @@ def item_discrimination_agreement(
         .reset_index(drop=True)
     )
     return summary, detail
+
+
+def recommended_items_by_category(recommended: pd.DataFrame) -> pd.DataFrame:
+    """Count recommended benchmark items per MT-Bench category."""
+    cols = ["category", "category_label", "n_items", "pct"]
+    if recommended.empty or "category_label" not in recommended.columns:
+        return pd.DataFrame(columns=cols)
+
+    group_cols = (
+        ["category", "category_label"]
+        if "category" in recommended.columns
+        else ["category_label"]
+    )
+    counts = (
+        recommended.groupby(group_cols, as_index=False)
+        .size()
+        .rename(columns={"size": "n_items"})
+        .sort_values("n_items", ascending=False)
+    )
+    if "category" not in counts.columns:
+        counts["category"] = counts["category_label"].str.lower().str.replace(" ", "_")
+    counts["pct"] = counts["n_items"] / counts["n_items"].sum() * 100
+    return counts.reset_index(drop=True)
+
+
+def compare_recommended_categories(
+    pairwise_items: pd.DataFrame,
+    score_items: pd.DataFrame,
+) -> pd.DataFrame:
+    """Side-by-side category counts for pairwise vs score recommended sets."""
+    pw = recommended_items_by_category(pairwise_items).rename(
+        columns={"n_items": "n_pairwise", "pct": "pct_pairwise"}
+    )
+    sc = recommended_items_by_category(score_items).rename(
+        columns={"n_items": "n_score", "pct": "pct_score"}
+    )
+    merged = pw.merge(sc, on=["category", "category_label"], how="outer").fillna(0)
+    merged["n_pairwise"] = merged["n_pairwise"].astype(int)
+    merged["n_score"] = merged["n_score"].astype(int)
+    return merged.sort_values("category_label").reset_index(drop=True)
